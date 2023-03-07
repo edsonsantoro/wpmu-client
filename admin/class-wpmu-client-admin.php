@@ -116,6 +116,8 @@ class Wpmu_Client_Admin {
 		
 		// save option into the database
 		update_blog_option( $wp_site->blog_id, 'client', $new_field_value);
+
+		$this->set_ss_options($wp_site->blog_id);
 	
 	}
 
@@ -131,6 +133,20 @@ class Wpmu_Client_Admin {
 			</tr>
 		</table>
 		<?php
+	}
+
+	public function set_ss_options($blog_id){
+
+		if(!class_exists('Simply_Static\Options')) return;
+
+		$ss = Simply_Static\Options::instance();
+		$ss->set('clear_directory_before_export', false);
+		$ss->set('delivery_method', 'local');
+		$client = get_blog_option( $blog_id, "client", false );
+		if(!$client) $client = 'blog-' . $blog_id;
+		$ss->set('local_dir', '/var/www/static-sites/' . $client  . '/'  . sanitize_title(get_blog_details( $blog_id )->blogname) );
+		$ss->save();
+
 	}
 
 }

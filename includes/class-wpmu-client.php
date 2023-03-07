@@ -157,7 +157,7 @@ class Wpmu_Client {
 		$this->loader->add_action( 'admin_enqueue_scripts', $plugin_admin, 'enqueue_styles' );
 		$this->loader->add_action( 'admin_enqueue_scripts', $plugin_admin, 'enqueue_scripts' );
 		$this->loader->add_action( 'wpmu_new_blog', $plugin_admin, 'add_new_blog_field' );
-		$this->loader->add_action( 'admin_print_scripts-site-new.php', $plugin_admin, 'my_admin_scripts' );
+		$this->loader->add_action( 'network_site_new_form', $plugin_admin, 'my_admin_scripts' );
 
 	}
 

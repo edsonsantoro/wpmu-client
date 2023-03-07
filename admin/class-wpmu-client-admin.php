@@ -109,20 +109,28 @@ class Wpmu_Client_Admin {
 	
 		// Use a default value here if the field was not submitted.
 		$new_field_value = 'test';
-		error_log("WP BLOG ID: " . $wp_site->blog_id);
 	
 		if ( !empty($_POST['blog']['client']) ) {
 			$new_field_value = $_POST['blog']['client'];
 		}
 		
-		error_log("SANTORO: " . $new_field_value);
-		
 		// save option into the database
-		$test = update_blog_option( $wp_site->blog_id, 'client', $new_field_value);
-
-		error_log("ATUALIZADO: " . $test);
+		update_blog_option( $wp_site->blog_id, 'client', $new_field_value);
 	
 	}
 
+	public function show_client_site_field($id){
+		
+		$client = get_blog_option( $id, 'client', true );
+		
+		?>
+		<table class="form-table" role="presentation">
+			<tr class="form-field form-required">
+				<th scope="row"><label for="client"><?php _e( 'Cliente' ); ?></label></th>
+				<td><input name="blog[client]" type="text" id="client" value="<?php echo $client ?>" /></td>
+			</tr>
+		</table>
+		<?php
+	}
 
 }

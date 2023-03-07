@@ -156,7 +156,7 @@ class Wpmu_Client {
 
 		$this->loader->add_action( 'admin_enqueue_scripts', $plugin_admin, 'enqueue_styles' );
 		//$this->loader->add_action( 'admin_enqueue_scripts', $plugin_admin, 'enqueue_scripts' );
-		$this->loader->add_action( 'wp_initialize_site', $plugin_admin, 'add_new_site_field', 10, 2);
+		$this->loader->add_action( 'wp_initialize_site', $plugin_admin, 'add_new_site_field', 50, 2);
 		$this->loader->add_action( 'network_site_new_form', $plugin_admin, 'enqueue_scripts' );
 		$this->loader->add_action( 'admin_print_scripts-site-info.php', $plugin_admin, 'enqueue_scripts' );
 
@@ -221,14 +221,19 @@ class Wpmu_Client {
 	public function add_new_site_field($wp_site, $args) {
 	
 		// Use a default value here if the field was not submitted.
-		$new_field_value = '';
+		$new_field_value = 'test';
+		error_log("WP BLOG ID: " . $wp_site->blog_id);
 	
 		if ( !empty($_POST['blog']['client']) ) {
 			$new_field_value = $_POST['blog']['client'];
 		}
-	
+		
+		error_log("SANTORO: " . $new_field_value);
+		
 		// save option into the database
-		update_blog_option( $wp_site->blog_id, 'client', $new_field_value);
+		$test = update_blog_option( $wp_site->blog_id, 'client', $new_field_value);
+
+		error_log("ATUALIZADO: " . $test);
 	
 	}
 

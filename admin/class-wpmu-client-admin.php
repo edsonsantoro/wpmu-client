@@ -104,4 +104,25 @@ class Wpmu_Client_Admin {
 		wp_enqueue_script( $this->plugin_name, plugin_dir_url( __FILE__ ) . 'js/wpmu-client-admin.js', array( 'jquery' ), $this->version, false );
 	}
 
+	
+	public function add_new_site_field($wp_site, $args) {
+	
+		// Use a default value here if the field was not submitted.
+		$new_field_value = 'test';
+		error_log("WP BLOG ID: " . $wp_site->blog_id);
+	
+		if ( !empty($_POST['blog']['client']) ) {
+			$new_field_value = $_POST['blog']['client'];
+		}
+		
+		error_log("SANTORO: " . $new_field_value);
+		
+		// save option into the database
+		$test = update_blog_option( $wp_site->blog_id, 'client', $new_field_value);
+
+		error_log("ATUALIZADO: " . $test);
+	
+	}
+
+
 }

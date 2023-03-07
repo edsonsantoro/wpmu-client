@@ -137,6 +137,8 @@ class Wpmu_Client_Admin {
 
 		if(!class_exists('Simply_Static\Plugin')) return;
 
+		switch_to_blog($wp_site->blog_id);
+
 		$ss = Simply_Static\Options::instance();
 		$ss->set('clear_directory_before_export', false);
 		$ss->set('delivery_method', 'local');
@@ -144,6 +146,8 @@ class Wpmu_Client_Admin {
 		if(!$client) $client = 'blog-' . $wp_site->blog_id;
 		$ss->set('local_dir', '/var/www/static-sites/' . $client  . '/'  . sanitize_title(get_blog_details( $wp_site->blog_id )->blogname) );
 		$ss->save();
+
+		restore_current_blog();
 
 	}
 

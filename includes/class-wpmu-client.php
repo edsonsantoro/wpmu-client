@@ -158,6 +158,7 @@ class Wpmu_Client {
 		//$this->loader->add_action( 'admin_enqueue_scripts', $plugin_admin, 'enqueue_scripts' );
 		$this->loader->add_action( 'wpmu_new_blog', $plugin_admin, 'add_new_blog_field' );
 		$this->loader->add_action( 'network_site_new_form', $plugin_admin, 'enqueue_scripts' );
+		$this->loader->add_action( 'admin_print_scripts-site-info.php', $plugin_admin, 'enqueue_scripts' );
 
 	}
 
@@ -226,11 +227,11 @@ class Wpmu_Client {
 		// Use a default value here if the field was not submitted.
 		$new_field_value = 'default';
 	
-		if ( !empty($_POST['blog']['new_field']) )
-			$new_field_value = $_POST['blog']['new_field'];
+		if ( !empty($_POST['blog']['client']) )
+			$new_field_value = $_POST['blog']['client'];
 	
 		// save option into the database
-		update_option( 'new_field', $new_field_value);
+		update_option( 'client', $new_field_value);
 	
 		restore_current_blog();
 	}

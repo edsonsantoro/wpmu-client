@@ -100,4 +100,8 @@ class Wpmu_Client_Admin {
 
 	}
 
+	public function my_admin_scripts() {
+		wp_enqueue_script( $this->plugin_name, plugin_dir_url( __FILE__ ) . 'js/wpmu-client-admin.js', array( 'jquery' ), $this->version, false );
+	}
+
 }

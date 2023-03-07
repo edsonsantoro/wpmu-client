@@ -157,7 +157,7 @@ class Wpmu_Client {
 		$this->loader->add_action( 'admin_enqueue_scripts', $plugin_admin, 'enqueue_styles' );
 		//$this->loader->add_action( 'admin_enqueue_scripts', $plugin_admin, 'enqueue_scripts' );
 		$this->loader->add_action( 'wpmu_new_blog', $plugin_admin, 'add_new_blog_field' );
-		$this->loader->add_action( 'network_site_new_form', $plugin_admin, 'my_admin_scripts' );
+		$this->loader->add_action( 'network_site_new_form', $plugin_admin, 'enqueue_scripts' );
 
 	}
 
@@ -235,9 +235,6 @@ class Wpmu_Client {
 		restore_current_blog();
 	}
 
-	public function my_admin_scripts() {
-		wp_register_script('wpmu-client', plugins_url('admin/js/wpmu-client-admin.js', __FILE__));
-		wp_enqueue_script('wpmu-client');
-	}
+	
 
 }

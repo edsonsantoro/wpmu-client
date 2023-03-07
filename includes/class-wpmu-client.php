@@ -219,21 +219,17 @@ class Wpmu_Client {
 	}
 
 	public function add_new_site_field($wp_site, $args) {
-
-		// Make sure the user can perform this action and the request came from the correct page.
-	
-		switch_to_blog($wp_site->site_id);
 	
 		// Use a default value here if the field was not submitted.
-		$new_field_value = 'default';
+		$new_field_value = '';
 	
-		if ( !empty($_POST['blog']['client']) )
+		if ( !empty($_POST['blog']['client']) ) {
 			$new_field_value = $_POST['blog']['client'];
+		}
 	
 		// save option into the database
-		update_option( 'client', $new_field_value);
+		update_blog_option( 'client', $new_field_value);
 	
-		restore_current_blog();
 	}
 
 	

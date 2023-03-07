@@ -156,7 +156,7 @@ class Wpmu_Client {
 
 		$this->loader->add_action( 'admin_enqueue_scripts', $plugin_admin, 'enqueue_styles' );
 		//$this->loader->add_action( 'admin_enqueue_scripts', $plugin_admin, 'enqueue_scripts' );
-		$this->loader->add_action( 'wpmu_new_blog', $plugin_admin, 'add_new_blog_field' );
+		$this->loader->add_action( 'wp_initialize_site', $plugin_admin, 'add_new_site_field' );
 		$this->loader->add_action( 'network_site_new_form', $plugin_admin, 'enqueue_scripts' );
 		$this->loader->add_action( 'admin_print_scripts-site-info.php', $plugin_admin, 'enqueue_scripts' );
 
@@ -218,11 +218,11 @@ class Wpmu_Client {
 		return $this->version;
 	}
 
-	public function add_new_blog_field($blog_id, $user_id, $domain, $path, $site_id, $meta) {
+	public function add_new_site_field($wp_site, $args) {
 
 		// Make sure the user can perform this action and the request came from the correct page.
 	
-		switch_to_blog($blog_id);
+		switch_to_blog($wp_site->site_id);
 	
 		// Use a default value here if the field was not submitted.
 		$new_field_value = 'default';

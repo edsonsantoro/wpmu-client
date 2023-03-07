@@ -137,7 +137,7 @@ class Wpmu_Client_Admin {
 
 	public function set_ss_options($blog_id){
 
-		if(!class_exists('Simply_Static\Options')) return;
+		if(!class_exists('Simply_Static\Plugin')) return;
 
 		$ss = Simply_Static\Options::instance();
 		$ss->set('clear_directory_before_export', false);

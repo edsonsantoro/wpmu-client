@@ -135,7 +135,10 @@ class Wpmu_Client_Admin {
 
 	public function set_ss_options($wp_site){
 
-		if(!class_exists('Simply_Static\Plugin')) return;
+		if(!class_exists('Simply_Static\Plugin')) {
+			error_log('function sply static does not exist');
+			return;
+		}
 
 		switch_to_blog($wp_site->blog_id);
 
@@ -143,7 +146,11 @@ class Wpmu_Client_Admin {
 		$ss->set('clear_directory_before_export', false);
 		$ss->set('delivery_method', 'local');
 		$client = get_blog_option( $wp_site->blog_id, "client", false );
-		if(!$client) $client = 'blog-' . $wp_site->blog_id;
+		
+		if(!$client) {
+			$client = 'blog-' . $wp_site->blog_id;
+		}
+		
 		$ss->set('local_dir', '/var/www/static-sites/' . $client  . '/'  . sanitize_title(get_blog_details( $wp_site->blog_id )->blogname) );
 		$ss->save();
 

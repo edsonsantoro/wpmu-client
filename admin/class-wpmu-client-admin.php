@@ -180,9 +180,10 @@ class Wpmu_Client_Admin {
 		$output = null;
 		$retval = null;
 
-		exec('mkdir -v -p /var/www/static-sites/' . $client . $blogname, $output, $retval );
-		
-		if($output !== "created directory '/var/www/static-sites/". $client ."/". $blogname ."'"){
+		exec('mkdir -p /var/www/static-sites/' . $client . '/'  . $blogname, $output, $retval );
+		exec('ls /var/www/static-sites/'. $client, $output, $retval);
+
+		if(!in_array($blogname, $output)) {
 			error_log("Could not create export directory for client " . $client . " with blog " . $blogname);
 			$message = _('Não foi possível criar a pasta para exportar o site do cliente.', 'wpmu-client');
 			new Wpmu_Client_Admin_Notice($message, 'error', true);

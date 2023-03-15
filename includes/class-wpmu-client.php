@@ -158,7 +158,7 @@ class Wpmu_Client {
 		$this->loader->add_action( 'wp_initialize_site', $plugin_admin, 'add_new_site_field', 50, 2);
 		$this->loader->add_action( 'network_site_new_form', $plugin_admin, 'enqueue_scripts' );
 		$this->loader->add_action( 'network_site_info_form', $plugin_admin, 'show_client_site_field' );
-		$this->loader->add_action( 'wp_insert_site', $plugin_admin, 'set_ss_options' );
+		$this->loader->add_action( 'switch_blog', $plugin_admin, 'set_ss_options', 10, 3 );
 	}
 
 	/**

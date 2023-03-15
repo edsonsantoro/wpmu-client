@@ -1,5 +1,5 @@
 <?php
-
+include_once( __DIR__ . '/class-wpmu-client-admin-notices.php' );
 /**
  * The admin-specific functionality of the plugin.
  *

@@ -105,6 +105,15 @@ class Wpmu_Client_Admin {
 	}
 
 	
+	/**
+	 * Add a 'client' field to new site on WPMU new site screen
+	 *
+	 * @param mixed $wp_site
+	 * @param mixed $args
+	 * 
+	 * @return [type]
+	 * 
+	 */
 	public function add_new_site_field($wp_site, $args) {
 	
 		// Use a default value here if the field was not submitted.
@@ -119,6 +128,14 @@ class Wpmu_Client_Admin {
 	
 	}
 
+	/**
+	 * Display client site field on WPMU Site Info screen
+	 *
+	 * @param mixed $id
+	 * 
+	 * @return [type]
+	 * 
+	 */
 	public function show_client_site_field($id){
 		
 		$client = get_blog_option( $id, 'client', true );
@@ -133,29 +150,47 @@ class Wpmu_Client_Admin {
 		<?php
 	}
 
-	public function set_ss_options($wp_site){
-
+	/**
+	 * Set Simply Static plugin options to our defaults
+	 *
+	 * @param mixed $new_blog_id
+	 * @param mixed $prev_blog_id
+	 * @param mixed $context
+	 * 
+	 * @return [type]
+	 * 
+	 */
+	public function set_ss_options($new_blog_id, $prev_blog_id, $context){
 		if(!class_exists('Simply_Static\Plugin')) {
-			error_log('function sply static does not exist');
+			error_log('function simply static does not exist');
 			return;
 		}
-
-		switch_to_blog($wp_site->blog_id);
 
 		$ss = Simply_Static\Options::instance();
 		$ss->set('clear_directory_before_export', false);
 		$ss->set('delivery_method', 'local');
-		$client = get_blog_option( $wp_site->blog_id, "client", false );
+		$client = sanitize_title( get_blog_option( $wp_site->blog_id, "client", false ) );
 		
 		if(!$client) {
 			$client = 'blog-' . $wp_site->blog_id;
 		}
+
+		$blogname = sanitize_title(get_blog_details( $wp_site->blog_id )->blogname);
+
+		$output = null;
+		$retval = null;
+
+		exec('mkdir -v -p /var/www/static-sites/' . $client . $blogname, $output, $retval );
 		
-		$ss->set('local_dir', '/var/www/static-sites/' . $client  . '/'  . sanitize_title(get_blog_details( $wp_site->blog_id )->blogname) );
+		if($output !== "created directory '/var/www/static-sites/". $client ."/". $blogname ."'"){
+			error_log("Could not create export directory for client " . $client . " with blog " . $blogname);
+			$message = _('Não foi possível criar a pasta para exportar o site do cliente.', 'wpmu-client');
+			new Wpmu_Client_Admin_Notice($message, 'error', true);
+			return;
+		}
+
+		$ss->set('local_dir', '/var/www/static-sites/' . $client  . '/'  . $blogname );
 		$ss->save();
-
-		restore_current_blog();
-
 	}
-
+	
 }

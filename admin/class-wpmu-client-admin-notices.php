@@ -31,17 +31,16 @@ class Wpmu_Client_Admin_Notice {
      * @param bool $dismissible If the message is dismissible or not. True by default
      * 
      */
-    function __construct( $message = '', $type = 'info', $dismissible = true ) {
+    function __construct( string $message = null, string $type = 'info', bool $dismissible = true ) {
         $this->_message = $message;
         $this->_dismissible = $dismissible;
         $this->_type = $type;
-
         add_action( 'admin_notices', array( $this, 'render' ) );
     }
 
     function render() {
         $dismiss = '';
         if($this->_dismissible) $dismiss = 'is-dismissible';
-        printf( '<div class="notice notice-'.$this->_type.' '.$dismiss.'"><p>%s</p></div>', $this->_message );
+        echo '<div class="notice notice-'.$this->_type.' '.$dismiss.'"><p>'.$this->_message.'</p></div>';
     }
 }

@@ -1,5 +1,5 @@
 <?php
-include_once( __DIR__ . '/class-wpmu-client-admin-notices.php' );
+require_once(__DIR__ . '/class-wpmu-client-admin-notices.php');
 /**
  * The admin-specific functionality of the plugin.
  *
@@ -20,7 +20,8 @@ include_once( __DIR__ . '/class-wpmu-client-admin-notices.php' );
  * @subpackage Wpmu_Client/admin
  * @author     Edson Del Santoro <edsonsantoro@gmail.com>
  */
-class Wpmu_Client_Admin {
+class Wpmu_Client_Admin
+{
 
 	/**
 	 * The ID of this plugin.
@@ -47,11 +48,11 @@ class Wpmu_Client_Admin {
 	 * @param      string    $plugin_name       The name of this plugin.
 	 * @param      string    $version    The version of this plugin.
 	 */
-	public function __construct( $plugin_name, $version ) {
+	public function __construct($plugin_name, $version)
+	{
 
 		$this->plugin_name = $plugin_name;
 		$this->version = $version;
-
 	}
 
 	/**
@@ -59,7 +60,8 @@ class Wpmu_Client_Admin {
 	 *
 	 * @since    1.0.0
 	 */
-	public function enqueue_styles() {
+	public function enqueue_styles()
+	{
 
 		/**
 		 * This function is provided for demonstration purposes only.
@@ -73,8 +75,7 @@ class Wpmu_Client_Admin {
 		 * class.
 		 */
 
-		wp_enqueue_style( $this->plugin_name, plugin_dir_url( __FILE__ ) . 'css/wpmu-client-admin.css', array(), $this->version, 'all' );
-
+		wp_enqueue_style($this->plugin_name, plugin_dir_url(__FILE__) . 'css/wpmu-client-admin.css', array(), $this->version, 'all');
 	}
 
 	/**
@@ -82,7 +83,8 @@ class Wpmu_Client_Admin {
 	 *
 	 * @since    1.0.0
 	 */
-	public function enqueue_scripts() {
+	public function enqueue_scripts()
+	{
 
 		/**
 		 * This function is provided for demonstration purposes only.
@@ -96,15 +98,15 @@ class Wpmu_Client_Admin {
 		 * class.
 		 */
 
-		wp_enqueue_script( $this->plugin_name, plugin_dir_url( __FILE__ ) . 'js/wpmu-client-admin.js', array( 'jquery' ), $this->version, false );
-
+		wp_enqueue_script($this->plugin_name, plugin_dir_url(__FILE__) . 'js/wpmu-client-admin.js', array('jquery'), $this->version, false);
 	}
 
-	public function my_admin_scripts() {
-		wp_enqueue_script( $this->plugin_name, plugin_dir_url( __FILE__ ) . 'js/wpmu-client-admin.js', array( 'jquery' ), $this->version, false );
+	public function my_admin_scripts()
+	{
+		wp_enqueue_script($this->plugin_name, plugin_dir_url(__FILE__) . 'js/wpmu-client-admin.js', array('jquery'), $this->version, false);
 	}
 
-	
+
 	/**
 	 * Add a 'client' field to new site on WPMU new site screen
 	 *
@@ -114,18 +116,18 @@ class Wpmu_Client_Admin {
 	 * @return [type]
 	 * 
 	 */
-	public function add_new_site_field($wp_site, $args) {
-	
+	public function add_new_site_field($wp_site, $args)
+	{
+
 		// Use a default value here if the field was not submitted.
 		$new_field_value = 'test';
-	
-		if ( !empty($_POST['blog']['client']) ) {
+
+		if (!empty($_POST['blog']['client'])) {
 			$new_field_value = $_POST['blog']['client'];
 		}
-		
+
 		// save option into the database
-		update_blog_option( $wp_site->blog_id, 'client', $new_field_value);
-	
+		update_blog_option($wp_site->blog_id, 'client', $new_field_value);
 	}
 
 	/**
@@ -136,32 +138,34 @@ class Wpmu_Client_Admin {
 	 * @return [type]
 	 * 
 	 */
-	public function show_client_site_field($id){
-		
-		$client = get_blog_option( $id, 'client', true );
-		
-		?>
+	public function show_client_site_field($id)
+	{
+
+		$client = get_blog_option($id, 'client', true);
+
+?>
 		<table class="form-table" role="presentation">
 			<tr class="form-field form-required">
-				<th scope="row"><label for="client"><?php _e( 'Cliente' ); ?></label></th>
+				<th scope="row"><label for="client"><?php _e('Cliente'); ?></label></th>
 				<td><input name="blog[client]" type="text" id="client" value="<?php echo $client ?>" /></td>
 			</tr>
 		</table>
-		<?php
+<?php
 	}
 
 	/**
 	 * Set Simply Static plugin options to our defaults
 	 *
-	 * @param mixed $new_blog_id
-	 * @param mixed $prev_blog_id
-	 * @param mixed $context
+	 * @param int $new_blog_id
+	 * @param int $prev_blog_id
+	 * @param string $context
 	 * 
-	 * @return [type]
+	 * @return void
 	 * 
 	 */
-	public function set_ss_options($new_blog_id, $prev_blog_id, $context){
-		if(!class_exists('Simply_Static\Plugin')) {
+	public function set_ss_options(int $new_blog_id, int $prev_blog_id, string $context)
+	{
+		if (!class_exists('Simply_Static\Plugin')) {
 			error_log('function simply static does not exist');
 			return;
 		}
@@ -169,29 +173,60 @@ class Wpmu_Client_Admin {
 		$ss = Simply_Static\Options::instance();
 		$ss->set('clear_directory_before_export', false);
 		$ss->set('delivery_method', 'local');
-		$client = sanitize_title( get_blog_option( $wp_site->blog_id, "client", false ) );
-		
-		if(!$client) {
-			$client = 'blog-' . $wp_site->blog_id;
+		$client = sanitize_title(get_blog_option($new_blog_id, "client", false));
+
+		if (!$client) {
+			$client = 'blog-' . $new_blog_id;
 		}
 
-		$blogname = sanitize_title(get_blog_details( $wp_site->blog_id )->blogname);
+		$blogname = sanitize_title(get_blog_details($new_blog_id)->blogname);
+
+		$path = "/var/www/static-sites/";
+
+		$client_dir_exists = self::check_dir_exists($path . $client);
+
+		if (!$client_dir_exists) {
+			$client_dir_exists = self::create_directory($path . $client);
+		}
+
+		if ($client_dir_exists) {
+			$project_dir_exists = self::check_dir_exists($path . $client .'/' . $blogname);
+
+			if (!$project_dir_exists) {
+				self::create_directory($path . $client . '/' . $blogname);
+			}
+		}
+
+		$ss->set('local_dir', $path . $client  . '/'  . $blogname);
+		$ss->save();
+	}
+
+	private function create_directory(string $path)
+	{
+
+		if (!$path) {
+			$notice = "Cliente ou nome de blog não definidos para criação da pasta";
+			error_log($notice);
+			$message = _($notice, 'wpmu-client');
+			new Wpmu_Client_Admin_Notice($message, 'error', true);
+		}
 
 		$output = null;
 		$retval = null;
 
-		exec('mkdir -p /var/www/static-sites/' . $client . '/'  . $blogname, $output, $retval );
-		exec('ls /var/www/static-sites/'. $client, $output, $retval);
+		exec('mkdir -p ' . $path);
+		return true;
 
-		if(!in_array($blogname, $output)) {
-			error_log("Could not create export directory for client " . $client . " with blog " . $blogname);
-			$message = _('Não foi possível criar a pasta para exportar o site do cliente.', 'wpmu-client');
-			new Wpmu_Client_Admin_Notice($message, 'error', true);
-			return;
-		}
-
-		$ss->set('local_dir', '/var/www/static-sites/' . $client  . '/'  . $blogname );
-		$ss->save();
 	}
-	
+
+	private function check_dir_exists(string $path)
+	{
+		if (!$path) {
+			error_log("Função check_dir_exists precisa de um caminho e um cliente");
+			return false;
+		} 
+
+		return  is_dir($path);
+
+	}
 }

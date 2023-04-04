@@ -181,7 +181,7 @@ class Wpmu_Client_Admin
 
 		$blogname = sanitize_title(get_blog_details($new_blog_id)->blogname);
 
-		$path = "/var/www/static-sites/";
+		$path = "/var/www/gen.drb.marketing/static/";
 
 		$client_dir_exists = self::check_dir_exists($path . $client);
 

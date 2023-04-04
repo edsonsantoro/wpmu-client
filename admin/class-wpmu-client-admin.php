@@ -165,30 +165,48 @@ class Wpmu_Client_Admin
 	 */
 	public function set_ss_options(int $new_blog_id, int $prev_blog_id, string $context)
 	{
+		// If we dont have Simply Static Plugin abort
 		if (!class_exists('Simply_Static\Plugin')) {
-			error_log('function simply static does not exist');
+			$message = 'O plugin Simply Static não existe ou não está ativo.';
+			error_log($message);
+			$notice = _($message, 'wpmu-client');
+			new Wpmu_Client_Admin_Notice($notice, 'error', true);
 			return;
-		}
-
-		$ss = Simply_Static\Options::instance();
-		$ss->set('clear_directory_before_export', false);
-		$ss->set('delivery_method', 'local');
+		}		
+		
+		// Get client name for folder
 		$client = sanitize_title(get_blog_option($new_blog_id, "client", false));
-
+		// If no client, get blog id
 		if (!$client) {
 			$client = 'blog-' . $new_blog_id;
 		}
 
+		// Get blog name for folder name creation
 		$blogname = sanitize_title(get_blog_details($new_blog_id)->blogname);
 
+		// Set path to create folders
+		// @TO-DO Criar uma opção no plugin para definir dinamicamente no painel do WP.
 		$path = "/var/www/gen.drb.marketing/static/";
 
+		// Verify if we has write permissons
+		$can_create_dir = self::has_right($path);
+
+		// Abort if no permissions
+		if(!$can_create_dir) {
+			$message = 'O plugin WPMU-Client não tem permissão para escrever novos diretórios. Verifique seu servidor.';
+			error_log($message);
+			$notice = _($message, 'wpmu-client');
+			new Wpmu_Client_Admin_Notice($notice, 'error', true);
+			return;
+		} 
+		
+		// Check if client folder exists
 		$client_dir_exists = self::check_dir_exists($path . $client);
 
-		if (!$client_dir_exists) {
-			$client_dir_exists = self::create_directory($path . $client);
-		}
+		//If no client folder, create it
+		if (!$client_dir_exists) $client_dir_exists = self::create_directory($path . $client);
 
+		// If client folder exists, check if blog folder exists and create it, if needed
 		if ($client_dir_exists) {
 			$project_dir_exists = self::check_dir_exists($path . $client .'/' . $blogname);
 
@@ -197,10 +215,22 @@ class Wpmu_Client_Admin
 			}
 		}
 
+		// Initialize SImply Static Options instance and set options
+		$ss = Simply_Static\Options::instance();
+		$ss->set('clear_directory_before_export', true);
+		$ss->set('delivery_method', 'local');
 		$ss->set('local_dir', $path . $client  . '/'  . $blogname);
 		$ss->save();
 	}
 
+	/**
+	 * Create directories for clients or blogs with a predefined path
+	 *
+	 * @param string $path The path to create directories
+	 * 
+	 * @return bool Always returns true
+	 * 
+	 */
 	private function create_directory(string $path)
 	{
 
@@ -219,6 +249,31 @@ class Wpmu_Client_Admin
 
 	}
 
+	/**
+	 * Check if php has write permisson to folder
+	 *
+	 * @param string $path The path to check permissions
+	 * 
+	 * @return bool True if php has write permisson to folder
+	 * 
+	 */
+	private function has_right(string $path){
+		if (!$path) {
+			error_log("Função check_dir_exists precisa de um caminho e um cliente");
+			return false;
+		} 
+
+		return is_writable($path);
+	}
+
+	/**
+	 * Check if folder exists
+	 *
+	 * @param string $path The path to check
+	 * 
+	 * @return bool Wheter the folder exists or not
+	 * 
+	 */
 	private function check_dir_exists(string $path)
 	{
 		if (!$path) {

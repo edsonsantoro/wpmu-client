@@ -122,6 +122,17 @@ class Wpmu_Client {
 		 */
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'public/class-wpmu-client-public.php';
 
+		/**
+		 * The class responsible for the settings page of this plugin for a single blog.
+		 */
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'admin/partials/wpmu-client-admin-display.php';
+
+		
+		/**
+		 * The class responsible for the settings page of this plugin for the network.
+		 */
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'admin/partials/wpmu-client-network-display.php';
+
 		$this->loader = new Wpmu_Client_Loader();
 
 	}
@@ -155,7 +166,7 @@ class Wpmu_Client {
 		$plugin_admin = new Wpmu_Client_Admin( $this->get_plugin_name(), $this->get_version() );
 
 		$this->loader->add_action( 'admin_enqueue_scripts', $plugin_admin, 'enqueue_styles' );
-		$this->loader->add_action( 'wp_initialize_site', $plugin_admin, 'add_new_site_field', 50, 2);
+		$this->loader->add_action( 'wp_initialize_site', $plugin_admin, 'save_custom_site_fields', 50, 2);
 		$this->loader->add_action( 'network_site_new_form', $plugin_admin, 'enqueue_scripts' );
 		$this->loader->add_action( 'network_site_info_form', $plugin_admin, 'show_client_site_field' );
 		$this->loader->add_action( 'switch_blog', $plugin_admin, 'set_ss_options', 10, 3 );

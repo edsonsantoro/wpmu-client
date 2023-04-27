@@ -2,3 +2,25 @@
  * All of the CSS for your admin-specific functionality should be
  * included in this file.
  */
+
+
+ #export_log {
+    background-color: #ffffff;
+    width: 75%;
+    min-height: 125px;
+    max-height: 500px;
+    overflow: scroll;
+    border: 1px solid #8c8f94;
+    border-radius: 4px;
+    padding: 7px;
+    font-family: monospace;
+ }
+
+ #wp-admin-bar-wpmu-client-gen {
+    background-color: red !important;
+    color: white;
+ }
+
+ .form-field .wpmu-client {
+   max-width: 25em;
+ }

@@ -1,17 +1,23 @@
-(function( $ ) {
-	'use strict';
+(function ($) {
+    "use strict";
     $(document).ready(function () {
-        $('<tr class="form-field form-required"></tr>')
-            .append($('<th scope="row">Cliente</th>'))
-            .append(
-                $("<td></td>")
-                    .append(
-                        $(
-                            '<input class="regular-text" type="text" title="Cliente" name="blog[client]">'
-                        )
-                    )
-                    .append($("<p>O Cliente deste site</p>"))
-            )
-            .insertAfter("#wpbody-content table tr:eq(2)");
+        $("input#export_button").on("click", function (e) {
+            e.preventDefault();
+
+            var output = $('#export_log').text('...');
+
+            const blogId = $('input#blog_id').val();
+
+            var data = {
+                'action': 'wpmu_init_export',
+                'whatever': 1234,
+                'blog_id': blogId
+            };
+
+            jQuery.post(ajaxurl, data, function(response) {
+                output.text(response);
+            });
+            
+        });
     });
-})( jQuery );
+})(jQuery);

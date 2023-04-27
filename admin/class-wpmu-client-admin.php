@@ -101,22 +101,16 @@ class Wpmu_Client_Admin
 		wp_enqueue_script($this->plugin_name, plugin_dir_url(__FILE__) . 'js/wpmu-client-admin.js', array('jquery'), $this->version, false);
 	}
 
-	public function my_admin_scripts()
-	{
-		wp_enqueue_script($this->plugin_name, plugin_dir_url(__FILE__) . 'js/wpmu-client-admin.js', array('jquery'), $this->version, false);
-	}
-
-
 	/**
-	 * Add a 'client' field to new site on WPMU new site screen
+	 * Save our custom field's values to the database.
 	 *
-	 * @param mixed $wp_site
-	 * @param mixed $args
+	 * @param int|WP_Site $wp_site Site ID or object.
+	 * @param array $args Arguments to modify the initialization behavior.
 	 * 
-	 * @return [type]
+	 * @return bool  True if the value was updated, false otherwise.
 	 * 
 	 */
-	public function add_new_site_field($wp_site, $args)
+	public function save_custom_site_fields( $wp_site, array $args)
 	{
 
 		// Use a default value here if the field was not submitted.
@@ -127,7 +121,7 @@ class Wpmu_Client_Admin
 		}
 
 		// save option into the database
-		update_blog_option($wp_site->blog_id, 'client', $new_field_value);
+		return update_blog_option($wp_site->blog_id, 'client', $new_field_value);
 	}
 
 	/**
@@ -135,19 +129,52 @@ class Wpmu_Client_Admin
 	 *
 	 * @param mixed $id
 	 * 
-	 * @return [type]
+	 * @return void
 	 * 
 	 */
 	public function show_client_site_field($id)
 	{
 
-		$client = get_blog_option($id, 'client', true);
+		$client = get_blog_option($id, 'client', "");
 
 ?>
 		<table class="form-table" role="presentation">
 			<tr class="form-field form-required">
 				<th scope="row"><label for="client"><?php _e('Cliente'); ?></label></th>
-				<td><input name="blog[client]" type="text" id="client" value="<?php echo $client ?>" /></td>
+				<td>
+					<input class="wpmu-client" name="blog[client]" type="text" id="client" value="<?php echo $client ?>" />
+					<p><?php echo __("Digite o nome do cliente para quem produzirá este novo site. <br><b>ATENÇÃO:</b> Verifique bem o nome, pois o mesmo será usado apra criar diretórios para exportação do código-fonte.", "wpmu-client");  ?></p>
+				</td>
+			</tr>
+		</table>
+	<?php
+	}
+
+	public function show_ftp_credentials_fields(int $id)
+	{
+
+		$ftp_host 		= get_blog_option($id, 'ftp_host', "");
+		$ftp_user		= get_blog_option($id, 'ftp_user', "");
+		$ftp_password 	= get_blog_option($id, 'ftp_password', "");
+		$ftp_port 		= get_blog_option($id, 'ftp_port', "");
+
+	?>
+		<table class="form-table" role="presentation">
+			<tr class="form-field form-required">
+				<th scope="row"><label for="ftp_host"><?php _e('Endereço FTP'); ?></label></th>
+				<td><input class="wpmu-client" name="blog[ftp_host]" type="text" id="ftp_host" placeholder="drbmarketing.com.br" value="<?php echo $ftp_host ?>" /></td>
+			</tr>
+			<tr class="form-field form-required">
+				<th scope="row"><label for="ftp_user"><?php _e('Usuário FTP'); ?></label></th>
+				<td><input class="wpmu-client" name="blog[ftp_user]" type="text" id="ftp_user" placeholder="user" value="<?php echo $ftp_user ?>" /></td>
+			</tr>
+			<tr class="form-field form-required">
+				<th scope="row"><label for="ftp_password"><?php _e('Senha FTP'); ?></label></th>
+				<td><input class="wpmu-client" name="blog[ftp_password]" type="password" id="ftp_password" placeholder="******" value="<?php echo $ftp_password ?>" /></td>
+			</tr>
+			<tr class="form-field form-required">
+				<th scope="row"><label for="ftp_port"><?php _e('Porta FTP'); ?></label></th>
+				<td><input class="wpmu-client" name="blog[ftp_port]" type="password" id="ftp_port" placeholder="21" value="<?php echo $ftp_port ?>" /></td>
 			</tr>
 		</table>
 <?php
@@ -165,41 +192,49 @@ class Wpmu_Client_Admin
 	 */
 	public function set_ss_options(int $new_blog_id, int $prev_blog_id, string $context)
 	{
-		// If we dont have Simply Static Plugin abort
+		// If Simply Static Plugin is not present abort
 		if (!class_exists('Simply_Static\Plugin')) {
 			$message = 'O plugin Simply Static não existe ou não está ativo.';
 			error_log($message);
-			$notice = _($message, 'wpmu-client');
+			$notice = __($message, 'wpmu-client');
 			new Wpmu_Client_Admin_Notice($notice, 'error', true);
 			return;
-		}		
-		
-		// Get client name for folder
+		}
+
+		//Check if this blog ID has already a folder created
+		$created = get_blog_option($new_blog_id, "wpmu_folder_created", false);
+
+		//This blog ID has a folder already, skipping creation
+		if ($created) return;
+
+		// Folder was not created, continue and get client name for folder
 		$client = sanitize_title(get_blog_option($new_blog_id, "client", false));
-		// If no client, get blog id
+		
+		// If no client name defined, get blog id
 		if (!$client) {
 			$client = 'blog-' . $new_blog_id;
 		}
 
-		// Get blog name for folder name creation
+		// Get blog name sanitized for folder name creation
 		$blogname = sanitize_title(get_blog_details($new_blog_id)->blogname);
 
 		// Set path to create folders
-		// @TO-DO Criar uma opção no plugin para definir dinamicamente no painel do WP.
+		// TODO: Criar uma opção no plugin para definir dinamicamente no painel do WP.
 		$path = "/var/www/gen.drb.marketing/static/";
 
+		// TODO: Verificar antes se o caminho existe
 		// Verify if we has write permissons
 		$can_create_dir = self::has_right($path);
 
 		// Abort if no permissions
-		if(!$can_create_dir) {
+		if (!$can_create_dir) {
 			$message = 'O plugin WPMU-Client não tem permissão para escrever novos diretórios. Verifique seu servidor.';
 			error_log($message);
-			$notice = _($message, 'wpmu-client');
+			$notice = __($message, 'wpmu-client');
 			new Wpmu_Client_Admin_Notice($notice, 'error', true);
 			return;
-		} 
-		
+		}
+
 		// Check if client folder exists
 		$client_dir_exists = self::check_dir_exists($path . $client);
 
@@ -208,11 +243,23 @@ class Wpmu_Client_Admin
 
 		// If client folder exists, check if blog folder exists and create it, if needed
 		if ($client_dir_exists) {
-			$project_dir_exists = self::check_dir_exists($path . $client .'/' . $blogname);
+			$project_dir_exists = self::check_dir_exists($path . $client . '/' . $blogname);
 
 			if (!$project_dir_exists) {
 				self::create_directory($path . $client . '/' . $blogname);
 			}
+		}
+
+		//Set this blog option as created, so we dont need to create it again
+		$folder_option = update_blog_option($new_blog_id, "wpmu_folder_created", true);
+
+		//Could not update blog option, logging
+		if (!$folder_option) {
+			$message = 'O plugin WPMU-Client não conseguiu definir uma opção do blog. Verifique o código.';
+			error_log($message);
+			$notice = _($message, 'wpmu-client');
+			new Wpmu_Client_Admin_Notice($notice, 'error', true);
+			return;
 		}
 
 		// Initialize SImply Static Options instance and set options
@@ -221,6 +268,89 @@ class Wpmu_Client_Admin
 		$ss->set('delivery_method', 'local');
 		$ss->set('local_dir', $path . $client  . '/'  . $blogname);
 		$ss->save();
+	}
+
+	private function wpmu_init_export()
+	{
+
+		//$blog_id = intval($_POST['blog_id']);
+
+		$options = get_option('wpmu_client_configuraes_option_name');
+
+		$ftp_host 		= $options['ftp_host'];
+		$ftp_user		= $options['ftp_user'];
+		$ftp_password 	= $options['ftp_password'];
+		$ftp_port 		= $options['ftp_port'];
+		$ftp_folder		= $options['default_local_export_path'];
+
+		// @TO-DO Adicionar caminho local e remoto para sincronização
+		// @TODO Podemos até definir se é pra sincronizar ou pra uppar apenas.
+
+		$cmd = 'lftp -u "' . $ftp_user . '","' . $ftp_password . '" -p ' . $ftp_port . ' ' . $ftp_host . ' -e "set ftp:ssl-allow no; mirror -R"';
+
+		self::liveExecuteCommand($cmd);
+
+		while (@ob_end_flush()); // end all output buffers if any
+
+		$proc = popen($cmd, 'r');
+		while (!feof($proc)) {
+			echo fread($proc, 4096);
+			@flush();
+		}
+
+		wp_die(); // this is required to terminate immediately and return a proper response
+	}
+
+	/**
+	 * Execute the given command by displaying console output live to the user.
+	 *  @param  string  cmd          :  command to be executed
+	 *  @return array   exit_status  :  exit status of the executed command
+	 *                  output       :  console output of the executed command
+	 */
+	private function liveExecuteCommand($cmd)
+	{
+
+		while (@ob_end_flush()); // end all output buffers if any
+
+		$proc = popen("$cmd 2>&1 ; echo Exit status : $?", 'r');
+
+		$live_output     = "";
+		$complete_output = "";
+
+		while (!feof($proc)) {
+			$live_output     = fread($proc, 4096);
+			$complete_output = $complete_output . $live_output;
+			print_r($live_output);
+			@flush();
+		}
+
+		pclose($proc);
+
+		// get exit status
+		preg_match('/[0-9]+$/', $complete_output, $matches);
+
+		// return exit status and intended output
+		return array(
+			'exit_status'  => intval($matches[0]),
+			'output'       => str_replace("Exit status : " . $matches[0], '', $complete_output)
+		);
+	}
+
+	private function wpmu_ftp_connect(int $blog_id)
+	{
+		$blog_id = intval($_POST['blog_id']);
+
+		$options = get_option('wpmu_client_configuraes_option_name');
+
+		$ftp_host 		= $options['ftp_host'];
+		$ftp_user		= $options['ftp_user'];
+		$ftp_password 	= $options['ftp_password'];
+		$ftp_port 		= $options['ftp_port'];
+		$ftp_folder		= $options['default_local_export_path'];
+
+		$cmd = 'lftp -u "' . $ftp_user . '","' . $ftp_password . '" -p ' . $ftp_port . ' ' . $ftp_host . ' -e "set ftp:ssl-allow no; ls"';
+
+		self::liveExecuteCommand($cmd);
 	}
 
 	/**
@@ -246,7 +376,6 @@ class Wpmu_Client_Admin
 
 		exec('mkdir -p ' . $path);
 		return true;
-
 	}
 
 	/**
@@ -257,11 +386,14 @@ class Wpmu_Client_Admin
 	 * @return bool True if php has write permisson to folder
 	 * 
 	 */
-	private function has_right(string $path){
+	private function has_right(string $path)
+	{	
+
+		// If string is empty, log error.
 		if (!$path) {
 			error_log("Função check_dir_exists precisa de um caminho e um cliente");
 			return false;
-		} 
+		}
 
 		return is_writable($path);
 	}
@@ -279,9 +411,28 @@ class Wpmu_Client_Admin
 		if (!$path) {
 			error_log("Função check_dir_exists precisa de um caminho e um cliente");
 			return false;
-		} 
+		}
 
 		return  is_dir($path);
+	}
 
+	public function register_menu_page()
+	{
+		include_once(plugin_dir_path(__FILE__) . 'partials/wpmu-client-admin-display.php');
+	}
+
+	public function add_admin_button($wp_admin_bar)
+	{
+
+		$site = get_bloginfo();
+
+		$args = [
+			'id' 		=> 'wpmu-client-gen',
+			'title'		=> 'Enviar ' . $site . ' para Remoto',
+			'href'		=> '/' . $site . '/wp-admin/options-general.php?page=wpmu-client-configuraes',
+			'meta'		=> ['class', 'wpmu-button-class'],
+		];
+
+		$wp_admin_bar->add_node($args);
 	}
 }

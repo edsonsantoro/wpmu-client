@@ -353,16 +353,17 @@ class Wpmu_Client_Admin
 		$created = get_blog_option($blog_id, "wpmu_folder_created", false);
 
 		//This blog ID has a folder already, skipping creation
-		if ($created) return true;
+		//if ($created) return;
 
 		// Folder was not created, continue and get client name for folder
-		$plugin_options = get_blog_option($blog_id, 'wpmu_client_config', ['client' => '']);
-		$client = (isset($plugin_options['client'])) ? sanitize_title($plugin_options['client']) : '';
+		$client = get_blog_option($blog_id, "wpmu-client_client", "");
 
 		// If no client name defined, get blog id
 		if (empty($client)) {
 			$client = 'blog-' . $blog_id;
 		}
+
+		$client = sanitize_title($client);
 
 		// Get blog name sanitized for folder name creation
 		$blogname = sanitize_title(get_blog_details($blog_id)->blogname);

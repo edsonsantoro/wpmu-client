@@ -58,7 +58,7 @@ class Wpmu_Client_Admin
 		add_filter('network_edit_site_nav_links', [$this, 'wpmu_new_siteinfo_tab']);
 		add_action('network_admin_edit_genupdate',  [$this, 'wpmu_save_settings'], 50);
 		add_action('network_admin_menu', [$this, 'wpmu_new_page']);
-		add_filter( 'pre_update_option_wpmu_client_config', [$this, 'myplugin_update_field_foo'], 10, 2 );
+		add_filter('pre_update_option_wpmu_client_config', [$this, 'myplugin_update_field_foo'], 10, 2);
 	}
 
 	public function wpmu_new_siteinfo_tab($tabs)
@@ -144,7 +144,7 @@ class Wpmu_Client_Admin
 	}
 
 	public function wpmu_save_settings()
-	{	
+	{
 		$id = absint($_POST['id']);
 		$check = check_admin_referer('gen-check' . $id); // nonce check
 
@@ -155,41 +155,29 @@ class Wpmu_Client_Admin
 			"ftp_pass" => "",
 			"ftp_port" => "21",
 			"ftp_path" => "./mirror",
-			"local_path" => "./site",
 			"client_dir" => 0
 		];
 
 		$posted = $_POST['blog'];
 
-		foreach($options as $option => $value) {
-			if (isset($posted[$option])) {
-				// Add posted values to our array
-				$options[$option] = $posted[$option];
+		foreach ($options as $option => $value) {
 
-				// local path corrections
-				if ($option == 'ftp_path') {
-					if (substr($posted['ftp_path'], 0, 1) !== '/') {
-						$options[$option] = ABSPATH . $posted[$option];
-					} else if ( substr($posted['ftp_path'], 0, 2) == './' ) {
-						$options[$option] = ABSPATH . substr($posted[$option], 2, strlen($posted[$option]));
-					}
-				}
+			// local path corrections
+			// if ($option == 'ftp_path') {
+			// 	if (substr($posted['ftp_path'], 0, 1) !== '/') {
+			// 		$options[$option] = ABSPATH . $posted[$option];
+			// 	} else if (substr($posted['ftp_path'], 0, 2) == './') {
+			// 		$options[$option] = ABSPATH . substr($posted[$option], 2, strlen($posted[$option]));
+			// 	}
+			// }
+
+			if (isset($posted[$option]) && !empty($posted[$option])) {
+				delete_blog_option($id, $this->plugin_name . '_' . $option);
+				update_blog_option($id, $this->plugin_name . "_" . $option, $posted[$option]);
 			}
 		}
 
 		$setup = $this->setup_folder($id);
-
-		$teste = [
-			"client" => "drb",
-			"ftp_path" => 'mirror',
-			"local_path" => "./site",
-			"ftp_user" => "edson@drbmarketing.com.br",
-			"ftp_host" => "drbmarketing.com.br",
-			"ftp_pass" => "pdG&a_o%^&D&",
-			"ftp_port" => "21",
-		];
-
-		update_blog_option($id, "wpmu_client_config", $teste);
 
 		wp_safe_redirect(
 			add_query_arg(
@@ -204,9 +192,10 @@ class Wpmu_Client_Admin
 		exit;
 	}
 
-	public function myplugin_update_field_foo($val , $old) {
-		error_log('val: ' . print_r($val,1));
-		error_log('old: ' . print_r($old,1));
+	public function myplugin_update_field_foo($val, $old)
+	{
+		error_log('val: ' . print_r($val, 1));
+		error_log('old: ' . print_r($old, 1));
 	}
 
 	/**
@@ -286,13 +275,7 @@ class Wpmu_Client_Admin
 	 */
 	public function show_client_site_field($id)
 	{
-		
-		if (isset($id) && !empty($id)) {
-			$options = get_blog_option($id, 'wpmu_client_config', false);
-		}
-
-		$client = (isset($options['client'])) ? $options['client'] : "";
-
+		$client = get_blog_option($id, "wpmu-client_client", "");
 	?>
 		<div class="wrap">
 			<h2>Dados Locais do Clientes</h2>
@@ -321,15 +304,11 @@ class Wpmu_Client_Admin
 	public function show_ftp_credentials_fields($id)
 	{
 
-		if (isset($id) && !empty($id)) {
-			$options = get_blog_option($id, 'wpmu_client_config', false);
-		}
-
-		$ftp_host 		 = (isset($options['ftp_host'])) ? $options['ftp_host'] : "";
-		$ftp_user		 = (isset($options['ftp_user'])) ? $options['ftp_user'] : "";
-		$ftp_pass 		 = (isset($options['ftp_pass'])) ? $options['ftp_pass'] : "";
-		$ftp_port 		 = (isset($options['ftp_port'])) ? $options['ftp_port'] : "";
-		$ftp_path 		 = (isset($options['ftp_path'])) ? $options['ftp_path'] : "";
+		$ftp_host = get_blog_option($id, "wpmu-client_ftp_host", "");
+		$ftp_user = get_blog_option($id, "wpmu-client_ftp_user", "");
+		$ftp_pass = get_blog_option($id, "wpmu-client_ftp_pass", "");
+		$ftp_port = get_blog_option($id, "wpmu-client_ftp_port", "");
+		$ftp_path = get_blog_option($id, "wpmu-client_ftp_path", "");
 
 	?>
 		<div class="wrap">
@@ -443,7 +422,7 @@ class Wpmu_Client_Admin
 		}
 
 		update_blog_option($blog_id, 'wpmu_export_path', $path . '/' . $client . '/' . $blogname);
-		
+
 		$this->set_ss_options($path . '/' . $client . '/' . $blogname, $client, $blogname);
 	}
 
@@ -460,10 +439,12 @@ class Wpmu_Client_Admin
 	public function set_ss_options(string $path, string $client, string $blogname)
 	{
 		// Initialize SImply Static Options instance and set options
+		$path = get_option("wpmu_export_path", "");
+
 		$ss = Simply_Static\Options::instance();
 		$ss->set('clear_directory_before_export', true);
 		$ss->set('delivery_method', 'local');
-		$ss->set('local_dir', $path . $client  . '/'  . $blogname);
+		$ss->set('local_dir', $path);
 		$ss->save();
 	}
 
@@ -516,47 +497,44 @@ class Wpmu_Client_Admin
 		register_post_type('clients', $args);
 	}
 
-	private function wpmu_init_export()
+	public function wpmu_init_export()
 	{
 
-		$options = get_option('wpmu_client_config');
-		$net_options = get_site_option('wpmu_client_network_config');
+		$net_options = get_site_option("wpmu-client-network-config", false);
 
-		$ftp_host 			= $options['ftp_host'];
-		$ftp_user			= (!empty($options['ftp_user'])) ? $options['ftp_user'] : 'anonymous';
-		$ftp_pass	 		= (!empty($options['ftp_pass'])) ? ',"' . $options['ftp_pass'] . '" ' : ' '; // Do not remove whitespaces
-		$ftp_port 			= (!empty($options['ftp_port'])) ? '-p ' . $options['ftp_port'] . ' ' : '-p 21 '; // Do not remove whitespaces
-		$ftp_path			= (!empty($options['ftp_path'])) ? $options['ftp_path'] : './';
-		$local_exports		= (isset($net_options['local_path'])) ? $net_options['local_path'] : './static';
-		$client				= (isset($options['client'])) ? $options['client'] : '';
+		$client				= get_option("wpmu-client_client", false);
+		$ftp_host 			= get_option("wpmu-client_ftp_host", false);
+		$ftp_user			= get_option("wpmu-client_ftp_user", "anonymous");
+		$ftp_pass	 		= (false != get_option("wpmu-client_ftp_pass")) ? ',"' . get_option("wpmu-client_ftp_pass") . '" ' : ' '; // Do not remove whitespaces
+		$ftp_port 			= (false != get_option("wpmu-client_ftp_port")) ? '-p ' . get_option("wpmu-client_ftp_port") . ' ' : '-p 21 '; // Do not remove whitespaces
+		$ftp_path			= (false != get_option("wpmu-client_ftp_path")) ? get_option("wpmu-client_ftp_path") : './';
+		$export_path		= get_option("wpmu_export_path", false);
 
 		if (!$ftp_host) {
 			$notice = "Credenciais de FTP não registrados. Abortando.";
 			error_log($notice);
 			$message = _($notice, $this->plugin_name);
 			new Wpmu_Client_Admin_Notice($message, 'error', true);
-			wp_die();
+			wp_die($message);
 		}
 
-		if(!$local_exports){
-			$notice = "Diretório local de criação não definido. Abortando.";
-			error_log($notice);
-			$message = _($notice, $this->plugin_name);
-			new Wpmu_Client_Admin_Notice($message, 'error', true);
-			wp_die();
-		}
-
-		if(!$client){
+		if (!$client) {
 			$notice = "Nome de cliente não definido. Abortando.";
 			error_log($notice);
 			$message = _($notice, $this->plugin_name);
 			new Wpmu_Client_Admin_Notice($message, 'error', true);
-			wp_die();
+			wp_die($message);
 		}
 
-		$local_path = $local_exports . '/' . $client . '/' . $
-
-		$cmd = 'lftp -u "' . $ftp_user . '"' . $ftp_pass . $ftp_port . $ftp_host . ' -e "set ftp:ssl-allow no; mirror -R ' . $local_path . ' ' . $ftp_path . '"';
+		if (!$export_path) {
+			$notice = "Nome de cliente não definido. Abortando.";
+			error_log($notice);
+			$message = _($notice, $this->plugin_name);
+			new Wpmu_Client_Admin_Notice($message, 'error', true);
+			wp_die($message);
+		}
+		
+		$cmd = 'lftp -u "' . $ftp_user . '"' . $ftp_pass . $ftp_port . $ftp_host . ' -e "set ftp:ssl-allow no; mirror -R ' . $export_path  . ' ' . $ftp_path . '"';
 
 		self::execute_command($cmd);
 
@@ -756,7 +734,7 @@ class Wpmu_Client_Admin
 
 	public function maybe_create_dir(string $option, mixed $old_value, mixed $value)
 	{
-		if ($option == 'wpmu-client-config') {
+		if ($option == 'wpmu_client_config') {
 			if (is_array($value) && isset($value['local_path']) && !empty($value['local_path'])) {
 				if ($this->is_dir($value['local_path'])) {
 					$created = $this->check_dir_exists($value['local_path']);

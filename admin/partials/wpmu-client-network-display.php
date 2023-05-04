@@ -169,7 +169,7 @@ class Wpmu_Client_Network_Config
 	{
 		register_setting(
 			$this->settings_slug . '_page', // option_group
-			'wpmu-client-config', // option_name
+			'wpmu_client_config', // option_name
 			[$this, 'wpmu_config_sanitize'] // sanitize_callback
 		);
 

@@ -18,10 +18,14 @@ class Wpmu_Client_Admin_Page
 
 	private $wpmu_client_config;
 
-	public function __construct()
+	private $plugin_name;
+
+	public function __construct(string $plugin_name)
 	{
 		add_action('admin_menu', array($this, 'wpmu_client_add_plugin_page'));
 		add_action('admin_init', array($this, 'wpmu_client_page_init'));
+		$this->plugin_name = $plugin_name;
+
 	}
 
 	public function wpmu_client_add_plugin_page()
@@ -37,7 +41,8 @@ class Wpmu_Client_Admin_Page
 
 	public function wpmu_client_create_admin_page()
 	{
-		$this->wpmu_client_config = get_option('wpmu_client_config'); ?>
+		
+		?>
 
 		<div class="wrap">
 			<h2>WPMU Client Configurações</h2>
@@ -62,12 +67,12 @@ class Wpmu_Client_Admin_Page
 			array($this, 'wpmu_client_sanitize') // sanitize_callback
 		);
 
-		add_settings_section(
-			'wpmu_client_general_section', // id
-			'Configurações indiviuais para este site', // title
-			array($this, 'wpmu_client_section_info'), // callback
-			'wpmu-client-config-admin' // page
-		);
+		// add_settings_section(
+		// 	'wpmu_client_general_section', // id
+		// 	'Configurações indiviuais para este site', // title
+		// 	array($this, 'wpmu_client_section_info'), // callback
+		// 	'wpmu-client-config-admin' // page
+		// );
 
 		add_settings_section(
 			'wpmu_client_upload', // id
@@ -92,45 +97,45 @@ class Wpmu_Client_Admin_Page
 			'wpmu_client_upload' // section
 		);
 
-		add_settings_field(
-			'local_path', // id
-			'Pasta padrão para exportação dos sites', // title
-			array($this, 'export_local_back'), // callback
-			'wpmu-client-config-admin', // page
-			'wpmu_client_general_section' // section
-		);
+		// add_settings_field(
+		// 	'local_path', // id
+		// 	'Pasta padrão para exportação dos sites', // title
+		// 	array($this, 'export_local_back'), // callback
+		// 	'wpmu-client-config-admin', // page
+		// 	'wpmu_client_general_section' // section
+		// );
 
-		add_settings_field(
-			'ftp_user', // id
-			'Usuário FTP para conexão com servidor remoto', // title
-			array($this, 'ftp_user_callback'), // callback
-			'wpmu-client-config-admin', // page
-			'wpmu_client_general_section' // section
-		);
+		// add_settings_field(
+		// 	'ftp_user', // id
+		// 	'Usuário FTP para conexão com servidor remoto', // title
+		// 	array($this, 'ftp_user_callback'), // callback
+		// 	'wpmu-client-config-admin', // page
+		// 	'wpmu_client_general_section' // section
+		// );
 
-		add_settings_field(
-			'ftp_host', // id
-			'Endereço FTP remoto', // title
-			array($this, 'ftp_host_callback'), // callback
-			'wpmu-client-config-admin', // page
-			'wpmu_client_general_section' // section
-		);
+		// add_settings_field(
+		// 	'ftp_host', // id
+		// 	'Endereço FTP remoto', // title
+		// 	array($this, 'ftp_host_callback'), // callback
+		// 	'wpmu-client-config-admin', // page
+		// 	'wpmu_client_general_section' // section
+		// );
 
-		add_settings_field(
-			'ftp_pass', // id
-			'Senha de usuário FTP (em branco)', // title
-			array($this, 'ftp_pass_callback'), // callback
-			'wpmu-client-config-admin', // page
-			'wpmu_client_general_section' // section
-		);
+		// add_settings_field(
+		// 	'ftp_pass', // id
+		// 	'Senha de usuário FTP (em branco)', // title
+		// 	array($this, 'ftp_pass_callback'), // callback
+		// 	'wpmu-client-config-admin', // page
+		// 	'wpmu_client_general_section' // section
+		// );
 
-		add_settings_field(
-			'ftp_port', // id
-			'Porta de FTP (21 por padrão)', // title
-			array($this, 'ftp_port_callback'), // callback
-			'wpmu-client-config-admin', // page
-			'wpmu_client_general_section' // section
-		);
+		// add_settings_field(
+		// 	'ftp_port', // id
+		// 	'Porta de FTP (21 por padrão)', // title
+		// 	array($this, 'ftp_port_callback'), // callback
+		// 	'wpmu-client-config-admin', // page
+		// 	'wpmu_client_general_section' // section
+		// );
 	}
 
 	public function wpmu_client_sanitize($input)
@@ -190,7 +195,7 @@ class Wpmu_Client_Admin_Page
 	{
 		printf(
 			'<input class="regular-text" type="text" name="wpmu_client_config[local_path]" id="local_path" value="%s"><pre id="return"></pre>',
-			isset($this->wpmu_client_config['local_path']) ? esc_attr($this->wpmu_client_config['local_path']) : ''
+			get_option("wpmu-client_local_path", "")
 		);
 	}
 
@@ -198,7 +203,7 @@ class Wpmu_Client_Admin_Page
 	{
 		printf(
 			'<input class="regular-text" type="text" name="wpmu_client_config[ftp_user]" id="ftp_user" value="%s">',
-			isset($this->wpmu_client_config['ftp_user']) ? esc_attr($this->wpmu_client_config['ftp_user']) : ''
+			get_option("wpmu-client_ftp_user", "")
 		);
 	}
 
@@ -206,7 +211,7 @@ class Wpmu_Client_Admin_Page
 	{
 		printf(
 			'<input class="regular-text" type="text" name="wpmu_client_config[ftp_host]" id="ftp_host" value="%s">',
-			isset($this->wpmu_client_config['ftp_host']) ? esc_attr($this->wpmu_client_config['ftp_host']) : ''
+			get_option("wpmu-client_ftp_host", "")
 		);
 	}
 
@@ -214,7 +219,7 @@ class Wpmu_Client_Admin_Page
 	{
 		printf(
 			'<input class="regular-text" type="password" name="wpmu_client_config[ftp_pass]" id="ftp_pass" value="%s">',
-			isset($this->wpmu_client_config['ftp_pass']) ? esc_attr($this->wpmu_client_config['ftp_pass']) : ''
+			get_option("wpmu-client_ftp_pass", "")
 		);
 	}
 
@@ -222,12 +227,12 @@ class Wpmu_Client_Admin_Page
 	{
 		printf(
 			'<input class="regular-text" type="number" name="wpmu_client_config[ftp_port]" id="ftp_port" value="%s">',
-			isset($this->wpmu_client_config['ftp_port']) ? esc_attr($this->wpmu_client_config['ftp_port']) : ''
+			get_option("wpmu-client_ftp_port", "")
 		);
 	}
 }
 
-if (is_admin()) $wpmu_client_config = new Wpmu_Client_Admin_Page();
+if (is_admin()) $wpmu_client_config = new Wpmu_Client_Admin_Page('wpmu-client');
 
 /* 
  * Retrieve this value with:

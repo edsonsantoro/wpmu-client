@@ -1,3 +1,5 @@
 .lando.yml
 docker-compose.yml
 xmlrpc.php
+
+/vendor/

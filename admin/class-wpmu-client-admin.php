@@ -346,7 +346,7 @@ class Wpmu_Client_Admin
 <?php
 	}
 
-	private function setup_folder($blog_id)
+	public function setup_folder($blog_id)
 	{
 
 		//Check if this blog ID has already a folder created
@@ -399,6 +399,7 @@ class Wpmu_Client_Admin
 		//If no client folder, create it
 		if (!$client_dir_exists) $client_dir_exists = self::create_directory($path . '/' . $client);
 
+		$updated = false;
 		// If client folder exists, check if blog folder exists and create it, if needed
 		if ($client_dir_exists) {
 			$project_dir_exists = self::check_dir_exists($path . '/' . $client . '/' . $blogname);
@@ -410,8 +411,6 @@ class Wpmu_Client_Admin
 				}
 			}
 		}
-
-		//Set this blog option as created, so we dont need to create it a
 
 		//Could not update blog option, logging
 		if (!$updated) {

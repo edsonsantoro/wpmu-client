@@ -123,12 +123,12 @@ class Wpmu_Client_Network_Config
 		if (is_dir($path)) {
 			exec('ls ' . $path, $out);
 			if (count($out) == 0) $out[0] = "Diretório vazio";
-			echo "Cuidado. O diretório ou arquivo " . $path . " já existe. Tem certeza que deseja exportar para esta pasta? O conteúdo é o seguinte: <br>";
+			echo "O diretório ou arquivo " . $path . " já existe. O conteúdo é o seguinte: <br>";
 			foreach ($out as $key => $val) {
 				echo $val . "<br>";
 			}
 		} else {
-			echo "O diretório " . $path . " NÃO existe e SERÁ CRIADO quando salvar as opções.";
+			echo "O diretório " . $path . " NÃO existe e será criado quando salvar as opções.";
 		}
 	}
 

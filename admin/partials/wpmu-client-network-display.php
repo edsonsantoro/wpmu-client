@@ -113,7 +113,7 @@ class Wpmu_Client_Network_Config
 
 	public function check_typed_directory()
 	{
-		$path = $_POST['path'];
+		$path = sanitize_title($_POST['path']);
 
 		if ($_POST['is_client']) {
 			$local_path = get_site_option($this->settings_slug, ['local_path' => './static'])['local_path'];

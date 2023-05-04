@@ -538,7 +538,7 @@ class Wpmu_Client_Admin
 			wp_die($message);
 		}
 		
-		$cmd = 'lftp -u "' . $ftp_user . '"' . $ftp_pass . $ftp_port . $ftp_host . ' -e "set ftp:ssl-allow no; mirror -R ' . $export_path  . ' ' . $ftp_path . '"';
+		$cmd = 'lftp -u "' . $ftp_user . '"' . $ftp_pass . $ftp_port . $ftp_host . ' -e "set ftp:ssl-allow no; mirror -R ' . $export_path  . '/ ' . $ftp_path . '"';
 
 		self::execute_command($cmd);
 

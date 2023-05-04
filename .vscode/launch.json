@@ -1,0 +1,23 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+      {
+        "name": "Attach to Chrome",
+        "port": 9003,
+        "request": "attach",
+        "type": "chrome",
+        "webRoot": "${workspaceFolder}"
+      },
+      {
+        "name": "Listen for XDebug",
+        "type": "php",
+        "request": "launch",
+        "port": 9003,
+        "hostname": "0.0.0.0", 
+        "log": false,
+        "pathMappings": {
+          "/app/wp-content/plugins/wpmu-client": "${workspaceFolder}/",
+        }
+      }
+    ]
+  }

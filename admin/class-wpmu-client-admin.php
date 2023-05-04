@@ -404,11 +404,15 @@ class Wpmu_Client_Admin
 		if ($client_dir_exists) {
 			$project_dir_exists = self::check_dir_exists($path . '/' . $client . '/' . $blogname);
 
+			// Check if client and project dir was created or not and set option
 			if (!$project_dir_exists) {
 				$created = self::create_directory($path . '/' . $client . '/' . $blogname);
 				if ($created) {
 					$updated = update_blog_option($blog_id, 'wpmu_folder_created', true);
 				}
+			} else {
+				$created = self::has_right($path . '/' . $client . '/' . $blogname);
+				$updated = update_blog_option($blog_id, 'wpmu_folder_created', true);
 			}
 		}
 

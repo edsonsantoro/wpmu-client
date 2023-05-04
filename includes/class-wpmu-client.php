@@ -241,11 +241,6 @@ class Wpmu_Client
 
 	}
 
-	private function load_network_config()
-	{
-		$this->network_config = new Wpmu_Client_Network_Config();
-	}
-
 	/**
 	 * Run the loader to execute all of the hooks with WordPress.
 	 *

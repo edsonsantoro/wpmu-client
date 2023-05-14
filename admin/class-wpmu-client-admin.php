@@ -520,8 +520,8 @@ class Admin_Functions
 			return;
 		}
 
-		if (!$export_path) {
-			$notice = "Nome de cliente não definido. Abortando.";
+		if (empty($export_path)) {
+			$notice = "Caminho de exportação não definido. Abortando.";
 			error_log($notice);
 			new Notice($notice, 'error', true);
 			wp_mail(wp_get_current_user()->data->user_email, "WPMU-Client", $notice);
@@ -543,8 +543,8 @@ class Admin_Functions
 		}
 
 
-		$cmd = 'lftp -u "' . $ftp_user . '"' . $ftp_pass . $ftp_port . $ftp_host . ' -e "set ftp:ssl-allow no; mirror -c ' . $ftp_sync_new_only . ' -R' . $export_path  . '/ ' . $ftp_path . '"';
-
+		$cmd = 'lftp -u "' . $ftp_user . '"' . $ftp_pass . $ftp_port . $ftp_host . ' -e "set ftp:ssl-allow no; mirror -c '. $ftp_sync_new_only.' -R ' . $export_path  . '/ ' . $ftp_path . '"';
+		
 		$this->execute_command($cmd);
 
 		while (@ob_end_flush()); // end all output buffers if any

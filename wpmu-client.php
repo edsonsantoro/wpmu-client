@@ -16,7 +16,7 @@
  * Plugin Name:       WPMU Client
  * Plugin URI:        https://santoro.studio
  * Description:       Adds a simple client field to the WPMU new blog form on WordPress dashboard.
- * Version:           1.0.0
+ * Version:           1.1.0
  * Author:            Edson Del Santoro
  * Author URI:        https://santoro.studio
  * License:           GPL-2.0+
@@ -24,6 +24,8 @@
  * Text Domain:       wpmu-client
  * Domain Path:       /languages
  */
+
+use Wpmu_Client\Wpmu_Client;
 
 // If this file is called directly, abort.
 if ( ! defined( 'WPINC' ) ) {
@@ -35,7 +37,7 @@ if ( ! defined( 'WPINC' ) ) {
  * Start at version 1.0.0 and use SemVer - https://semver.org
  * Rename this for your plugin and update it as you release new versions.
  */
-define( 'WPMU_CLIENT_VERSION', '1.0.0' );
+define( 'WPMU_CLIENT_VERSION', '1.1.0' );
 
 /**
  * The code that runs during plugin activation.
@@ -43,7 +45,7 @@ define( 'WPMU_CLIENT_VERSION', '1.0.0' );
  */
 function activate_wpmu_client() {
 	require_once plugin_dir_path( __FILE__ ) . 'includes/class-wpmu-client-activator.php';
-	Wpmu_Client_Activator::activate();
+	\Wpmu_Client\Activator::activate();
 }
 
 /**
@@ -52,7 +54,7 @@ function activate_wpmu_client() {
  */
 function deactivate_wpmu_client() {
 	require_once plugin_dir_path( __FILE__ ) . 'includes/class-wpmu-client-deactivator.php';
-	Wpmu_Client_Deactivator::deactivate();
+	\Wpmu_Client\Deactivator::deactivate();
 }
 
 register_activation_hook( __FILE__, 'activate_wpmu_client' );
@@ -76,7 +78,14 @@ require plugin_dir_path( __FILE__ ) . 'includes/class-wpmu-client.php';
 function run_wpmu_client() {
 
 	$plugin = new Wpmu_Client();
-	$plugin->run();
-
+	if($plugin->can_run()){
+		$plugin->run();
+	} else {
+		$message = __("WPMU-CLIENT: O plugin Simply Static não existe ou não está ativo na rede. Não podemos trabalhar. Abortando.", "wpmu-plugin");
+		deactivate_wpmu_client();
+		$plugin->shutdown($message);
+	}
 }
+
 run_wpmu_client();
+

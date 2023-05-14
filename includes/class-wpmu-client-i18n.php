@@ -1,5 +1,7 @@
 <?php
 
+namespace Wpmu_Client;
+
 /**
  * Define the internationalization functionality
  *
@@ -24,7 +26,8 @@
  * @subpackage Wpmu_Client/includes
  * @author     Edson Del Santoro <edsonsantoro@gmail.com>
  */
-class Wpmu_Client_i18n {
+class i18n
+{
 
 
 	/**
@@ -32,16 +35,13 @@ class Wpmu_Client_i18n {
 	 *
 	 * @since    1.0.0
 	 */
-	public function load_plugin_textdomain() {
+	public function load_plugin_textdomain()
+	{
 
 		load_plugin_textdomain(
 			'wpmu-client',
 			false,
-			dirname( dirname( plugin_basename( __FILE__ ) ) ) . '/languages/'
+			dirname(dirname(plugin_basename(__FILE__))) . '/languages/'
 		);
-
 	}
-
-
-
 }

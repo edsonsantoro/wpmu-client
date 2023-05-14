@@ -1,5 +1,6 @@
 <?php
 
+namespace Wpmu_Client;
 /**
  * Fired during plugin deactivation
  *
@@ -20,7 +21,7 @@
  * @subpackage Wpmu_Client/includes
  * @author     Edson Del Santoro <edsonsantoro@gmail.com>
  */
-class Wpmu_Client_Deactivator {
+class Deactivator {
 
 	/**
 	 * Short Description. (use period)
@@ -30,7 +31,7 @@ class Wpmu_Client_Deactivator {
 	 * @since    1.0.0
 	 */
 	public static function deactivate() {
-
+		
 	}
 
 }

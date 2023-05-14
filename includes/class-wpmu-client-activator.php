@@ -1,5 +1,7 @@
 <?php
 
+namespace Wpmu_Client;
+
 /**
  * Fired during plugin activation
  *
@@ -20,7 +22,8 @@
  * @subpackage Wpmu_Client/includes
  * @author     Edson Del Santoro <edsonsantoro@gmail.com>
  */
-class Wpmu_Client_Activator {
+class Activator
+{
 
 	/**
 	 * Short Description. (use period)
@@ -29,8 +32,9 @@ class Wpmu_Client_Activator {
 	 *
 	 * @since    1.0.0
 	 */
-	public static function activate() {
-
+	public static function activate()
+	{
 	}
 
+	
 }

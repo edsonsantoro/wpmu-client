@@ -1,10 +1,13 @@
 <?php
+
+namespace Wpmu_Client;
+
 /* An easy way to keep in track of external processes.
  * Ever wanted to execute a process in php, but you still wanted to have somewhat controll of the process ? Well.. This is a way of doing it.
  * @compability: Linux only. (Windows does not work).
  * @author: Peec
  */
-class Wpmu_Client_Process{
+class Process{
     private $pid;
     private $command;
 
@@ -47,4 +50,3 @@ class Wpmu_Client_Process{
         else return false;
     }
 }
-?>

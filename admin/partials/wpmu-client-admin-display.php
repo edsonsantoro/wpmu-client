@@ -1,5 +1,7 @@
 <?php
 
+namespace Wpmu_Client;
+
 /**
  * Provide a admin area view for the plugin
  *
@@ -13,21 +15,33 @@
  */
 
 
-class Wpmu_Client_Admin_Page
+class Admin_Settings_Page
 {
+	/**
+	 * Plugin name
+	 * @var string
+	 */
+	protected $plugin_name;
 
-	private $wpmu_client_config;
+	/**
+	 * This will be used for the SubMenu URL in the settings page and to verify which variables to save.
+	 *
+	 * @var string
+	 */
+	protected $blog_settings_slug;
 
-	private $plugin_name;
+	protected $network_settings_slug;
 
-	public function __construct(string $plugin_name)
+	public function __construct(string $plugin_name, string $network_settings_slug, string $blog_settings_slug)
 	{
-		add_action('admin_menu', array($this, 'wpmu_client_add_plugin_page'));
-		add_action('admin_init', array($this, 'wpmu_client_page_init'));
+		$this->network_settings_slug = $network_settings_slug;
+		$this->blog_settings_slug = $blog_settings_slug;
 		$this->plugin_name = $plugin_name;
-
 	}
 
+	/**
+	 * Add single site menu item
+	 */
 	public function wpmu_client_add_plugin_page()
 	{
 		add_options_page(
@@ -39,10 +53,13 @@ class Wpmu_Client_Admin_Page
 		);
 	}
 
+	/**
+	 * Render the page
+	 */
 	public function wpmu_client_create_admin_page()
 	{
-		
-		?>
+
+?>
 
 		<div class="wrap">
 			<h2>WPMU Client Configurações</h2>
@@ -51,41 +68,45 @@ class Wpmu_Client_Admin_Page
 
 			<form method="post" action="options.php">
 				<?php
-				settings_fields('wpmu_client_config');
-				do_settings_sections('wpmu-client-config-admin');
+				settings_fields($this->blog_settings_slug);
+				do_settings_sections($this->blog_settings_slug . '-admin');
 				submit_button();
 				?>
 			</form>
 		</div>
 <?php }
 
+	/**
+	 * Render single site settings page
+	 */
 	public function wpmu_client_page_init()
 	{
 		register_setting(
-			'wpmu_client_config', // option_group
-			'wpmu_client_config', // option_name
+			$this->blog_settings_slug, // option_group
+			$this->blog_settings_slug, // option_name
 			array($this, 'wpmu_client_sanitize') // sanitize_callback
 		);
-
-		// add_settings_section(
-		// 	'wpmu_client_general_section', // id
-		// 	'Configurações indiviuais para este site', // title
-		// 	array($this, 'wpmu_client_section_info'), // callback
-		// 	'wpmu-client-config-admin' // page
-		// );
 
 		add_settings_section(
 			'wpmu_client_upload', // id
 			'Exportação', // title
 			array($this, 'wpmu_client_section_info'), // callback
-			'wpmu-client-config-admin' // page
+			$this->blog_settings_slug . '-admin' // page
+		);
+
+		add_settings_field(
+			'show_config', // id
+			'Ver Configuração de Exportação', // title
+			array($this, 'show_config_callback'), // callback
+			$this->blog_settings_slug . '-admin', // page
+			'wpmu_client_upload' // section
 		);
 
 		add_settings_field(
 			'export_log', // id
 			'Log de exportação', // title
 			array($this, 'export_log_callback'), // callback
-			'wpmu-client-config-admin', // page
+			$this->blog_settings_slug . '-admin', // page
 			'wpmu_client_upload' // section
 		);
 
@@ -93,49 +114,9 @@ class Wpmu_Client_Admin_Page
 			'export_button', // id
 			'Iniciar Exportação', // title
 			array($this, 'export_button_callback'), // callback
-			'wpmu-client-config-admin', // page
+			$this->blog_settings_slug . '-admin', // page
 			'wpmu_client_upload' // section
 		);
-
-		// add_settings_field(
-		// 	'local_path', // id
-		// 	'Pasta padrão para exportação dos sites', // title
-		// 	array($this, 'export_local_back'), // callback
-		// 	'wpmu-client-config-admin', // page
-		// 	'wpmu_client_general_section' // section
-		// );
-
-		// add_settings_field(
-		// 	'ftp_user', // id
-		// 	'Usuário FTP para conexão com servidor remoto', // title
-		// 	array($this, 'ftp_user_callback'), // callback
-		// 	'wpmu-client-config-admin', // page
-		// 	'wpmu_client_general_section' // section
-		// );
-
-		// add_settings_field(
-		// 	'ftp_host', // id
-		// 	'Endereço FTP remoto', // title
-		// 	array($this, 'ftp_host_callback'), // callback
-		// 	'wpmu-client-config-admin', // page
-		// 	'wpmu_client_general_section' // section
-		// );
-
-		// add_settings_field(
-		// 	'ftp_pass', // id
-		// 	'Senha de usuário FTP (em branco)', // title
-		// 	array($this, 'ftp_pass_callback'), // callback
-		// 	'wpmu-client-config-admin', // page
-		// 	'wpmu_client_general_section' // section
-		// );
-
-		// add_settings_field(
-		// 	'ftp_port', // id
-		// 	'Porta de FTP (21 por padrão)', // title
-		// 	array($this, 'ftp_port_callback'), // callback
-		// 	'wpmu-client-config-admin', // page
-		// 	'wpmu_client_general_section' // section
-		// );
 	}
 
 	public function wpmu_client_sanitize($input)
@@ -144,23 +125,7 @@ class Wpmu_Client_Admin_Page
 		if (isset($input['local_path'])) {
 			$sanitary_values['local_path'] = sanitize_text_field($input['local_path']);
 		}
-
-		if (isset($input['ftp_user'])) {
-			$sanitary_values['ftp_user'] = sanitize_text_field($input['ftp_user']);
-		}
-
-		if (isset($input['ftp_host'])) {
-			$sanitary_values['ftp_host'] = sanitize_text_field($input['ftp_host']);
-		}
-
-		if (isset($input['ftp_pass'])) {
-			$sanitary_values['ftp_pass'] = sanitize_text_field($input['ftp_pass']);
-		}
-
-		if (isset($input['ftp_port'])) {
-			$sanitary_values['ftp_port'] = sanitize_text_field($input['ftp_port']);
-		}
-
+		
 		return $sanitary_values;
 	}
 
@@ -171,22 +136,36 @@ class Wpmu_Client_Admin_Page
 	public function export_button_callback()
 	{
 		printf(
-			'<input class="button button-secondary" type="button" name="wpmu_client_config[export_button]" id="export_button" value="%s">',
-			"Inicar Exportação"
+			'<input class="button button-secondary" type="button" name="'.$this->blog_settings_slug.'[export_button]" id="export_button" value="%s">',
+			"Iniciar Exportação"
 		);
 
 		printf(
-			'<input type="hidden" name="wpmu_client_config[blog_id]" id="blog_id" value="%s" />',
+			'<input type="hidden" name="'.$this->blog_settings_slug.'[blog_id]" id="blog_id" value="%s" />',
 			get_current_blog_id()
 		);
+	}
 
+	public function show_config_callback()
+	{	
+		printf(
+			'<a href="%s" class="button button-secondary" type="button" name="'.$this->blog_settings_slug.'[show_config]" id="show_config" value="">%s</a>',
+			add_query_arg(
+				array(
+					'page' => 'genpage',
+					'id' => get_current_blog_id()
+				),
+				network_admin_url('sites.php')
+			),
+			__("Mostrar Configuração", $this->plugin_name)
+		);
 	}
 
 	public function export_log_callback()
 	{
 
 		printf(
-			'<pre name="wpmu_client_config[export_log]" id="export_log">%s</pre>',
+			'<pre name="'.$this->blog_settings_slug.'[export_log]" id="export_log">%s</pre>',
 			'O log aparecerá aqui...'
 		);
 	}
@@ -194,54 +173,42 @@ class Wpmu_Client_Admin_Page
 	public function export_local_back()
 	{
 		printf(
-			'<input class="regular-text" type="text" name="wpmu_client_config[local_path]" id="local_path" value="%s"><pre id="return"></pre>',
-			get_option("wpmu-client_local_path", "")
+			'<input class="regular-text" type="text" name="'.$this->blog_settings_slug.'[local_path]" id="local_path" value="%s"><pre id="return"></pre>',
+			get_option($this->blog_settings_slug . "_local_path", "")
 		);
 	}
 
 	public function ftp_user_callback()
 	{
 		printf(
-			'<input class="regular-text" type="text" name="wpmu_client_config[ftp_user]" id="ftp_user" value="%s">',
-			get_option("wpmu-client_ftp_user", "")
+			'<input class="regular-text" type="text" name="'.$this->blog_settings_slug.'[ftp_user]" id="ftp_user" value="%s">',
+			get_option($this->blog_settings_slug . "_ftp_user", "")
 		);
 	}
 
 	public function ftp_host_callback()
 	{
 		printf(
-			'<input class="regular-text" type="text" name="wpmu_client_config[ftp_host]" id="ftp_host" value="%s">',
-			get_option("wpmu-client_ftp_host", "")
+			'<input class="regular-text" type="text" name="'.$this->blog_settings_slug.'[ftp_host]" id="ftp_host" value="%s">',
+			get_option($this->blog_settings_slug . "_ftp_host", "")
 		);
 	}
 
 	public function ftp_pass_callback()
 	{
 		printf(
-			'<input class="regular-text" type="password" name="wpmu_client_config[ftp_pass]" id="ftp_pass" value="%s">',
-			get_option("wpmu-client_ftp_pass", "")
+			'<input class="regular-text" type="password" name="'.$this->blog_settings_slug.'[ftp_pass]" id="ftp_pass" value="%s">',
+			get_option($this->blog_settings_slug . "_ftp_pass", "")
 		);
 	}
 
 	public function ftp_port_callback()
 	{
 		printf(
-			'<input class="regular-text" type="number" name="wpmu_client_config[ftp_port]" id="ftp_port" value="%s">',
-			get_option("wpmu-client_ftp_port", "")
+			'<input class="regular-text" type="number" name="'.$this->blog_settings_slug.'[ftp_port]" id="ftp_port" value="%s">',
+			get_option($this->blog_settings_slug . "_ftp_port", "")
 		);
 	}
 }
-
-if (is_admin()) $wpmu_client_config = new Wpmu_Client_Admin_Page('wpmu-client');
-
-/* 
- * Retrieve this value with:
- * $wpmu_client_config = get_option( 'wpmu_client_config' ); // Array of All Options
- * $local_path = $wpmu_client_config['local_path']; // Pasta padrão para exportação dos sites
- * $ftp_user = $wpmu_client_config['ftp_user']; // Usuário FTP para conexão com servidor remoto
- * $ftp_host = $wpmu_client_config['ftp_host']; // Endereço FTP remoto
- * $ftp_pass = $wpmu_client_config['ftp_pass']; // Senha de usuário FTP (em branco)
- * $ftp_port = $wpmu_client_config['ftp_port']; // Porta de FTP (21 por padrão)
- */
 
 ?>

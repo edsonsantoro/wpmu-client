@@ -1,6 +1,8 @@
 <?php
 
-class Wpmu_Client_Admin_Notice {
+namespace Wpmu_Client;
+
+class Notice {
 
     /**
      * The message of the notice
@@ -29,13 +31,19 @@ class Wpmu_Client_Admin_Notice {
      * @param string $message The message of the notice. Empty string my default.
      * @param string $type The type of notice (error, info, warning or success). Info by default
      * @param bool $dismissible If the message is dismissible or not. True by default
+     * @param bool $network True if the message is for network admins, false for site admins.
      * 
      */
-    function __construct( string $message = null, string $type = 'info', bool $dismissible = true ) {
+    function __construct( string $message = null, string $type = 'info', bool $dismissible = true, bool $network = false ) {
         $this->_message = $message;
         $this->_dismissible = $dismissible;
         $this->_type = $type;
-        add_action( 'admin_notices', array( $this, 'render' ) );
+        if($network) {
+            add_action( 'network_admin_notices', [$this, 'render'], 5 );    
+        } else {
+            add_action( 'admin_notices', [$this, 'render'], 5  );
+        }
+        
     }
 
     function render() {

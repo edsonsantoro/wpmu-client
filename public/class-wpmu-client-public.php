@@ -1,5 +1,6 @@
 <?php
 
+namespace Wpmu_Client;
 /**
  * The public-facing functionality of the plugin.
  *
@@ -20,7 +21,7 @@
  * @subpackage Wpmu_Client/public
  * @author     Edson Del Santoro <edsonsantoro@gmail.com>
  */
-class Wpmu_Client_Public {
+class Public_Functions {
 
 	/**
 	 * The ID of this plugin.
@@ -65,15 +66,15 @@ class Wpmu_Client_Public {
 		 * This function is provided for demonstration purposes only.
 		 *
 		 * An instance of this class should be passed to the run() function
-		 * defined in Wpmu_Client_Loader as all of the hooks are defined
+		 * defined in Loader as all of the hooks are defined
 		 * in that particular class.
 		 *
-		 * The Wpmu_Client_Loader will then create the relationship
+		 * The Loader will then create the relationship
 		 * between the defined hooks and the functions defined in this
 		 * class.
 		 */
 
-		wp_enqueue_style( $this->plugin_name, plugin_dir_url( __FILE__ ) . 'css/wpmu-client-public.css', array(), $this->version, 'all' );
+		//wp_enqueue_style( $this->plugin_name, plugin_dir_url( __FILE__ ) . 'css/wpmu-client-public.css', array(), $this->version, 'all' );
 
 	}
 
@@ -88,15 +89,15 @@ class Wpmu_Client_Public {
 		 * This function is provided for demonstration purposes only.
 		 *
 		 * An instance of this class should be passed to the run() function
-		 * defined in Wpmu_Client_Loader as all of the hooks are defined
+		 * defined in Loader as all of the hooks are defined
 		 * in that particular class.
 		 *
-		 * The Wpmu_Client_Loader will then create the relationship
+		 * The Loader will then create the relationship
 		 * between the defined hooks and the functions defined in this
 		 * class.
 		 */
 
-		wp_enqueue_script( $this->plugin_name, plugin_dir_url( __FILE__ ) . 'js/wpmu-client-public.js', array( 'jquery' ), $this->version, false );
+		//wp_enqueue_script( $this->plugin_name, plugin_dir_url( __FILE__ ) . 'js/wpmu-client-public.js', array( 'jquery' ), $this->version, false );
 
 	}
 

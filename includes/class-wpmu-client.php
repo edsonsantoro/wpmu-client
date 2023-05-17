@@ -277,7 +277,7 @@ class Wpmu_Client
 		// Ajax function to check directory names
 		$this->loader->add_action('wp_ajax_check_typed_directory', $plugin_admin, 'check_typed_directory');
 		// Register the stylesheets for the admin area.
-		$this->loader->add_action('admin_enqueue_scripts', $plugin_admin, 'enqueue_styles');
+		$this->loader->add_action('admin_enqueue_scripts', $plugin_admin, 'enqueue_styles', 100);
 		// Verify client name when creating new site
 		$this->loader->add_action('wp_validate_site_data', $plugin_admin, 'check_new_blog_fields', 10, 3);
 		// Save our custom fields data when site is initialized
@@ -290,6 +290,16 @@ class Wpmu_Client
 		$this->loader->add_action('switch_blog', $plugin_admin, 'set_ss_options', 10, 3);
 		// The Ajax function responsible for exporting static generated sites to remote FTPs
 		$this->loader->add_action('wp_ajax_wpmu_init_export', $plugin_admin, 'wpmu_init_export');
+
+		add_action('wp_print_scripts', function(){
+			//wp_deregister_script( 'elementor-pro-webpack-runtime' );
+			//wp_dequeue_script( 'elementor-pro-webpack-runtime' );
+		});
+
+		add_filter('ss_match_tags', function($match_tags){
+			$match_tags['div'] = array( 'data-settings' );
+			return $match_tags;
+		});
 	}
 
 	/**

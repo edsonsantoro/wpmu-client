@@ -206,6 +206,8 @@ class Admin_Functions
 	 */
 	public function enqueue_scripts()
 	{
+		wp_deregister_script( 'elementor-pro-webpack-runtime' );
+		wp_dequeue_script( 'elementor-pro-webpack-runtime' );
 		wp_enqueue_script($this->plugin_name, plugin_dir_url(__FILE__) . 'js/wpmu-client-admin.js', array('jquery'), $this->version, false);
 	}
 

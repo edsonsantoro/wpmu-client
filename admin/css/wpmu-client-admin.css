@@ -24,3 +24,7 @@
  .form-field .wpmu-client {
    max-width: 25em;
  }
+
+ .form-table {
+   max-width: 100vw;
+ }

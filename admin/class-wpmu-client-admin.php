@@ -597,7 +597,7 @@ class Admin_Functions
 		wp_die();
 	}
 
-	public function read_export_log(string $blog_id = '', string $timestamp = '')
+	public function read_export_log($blog_id = '', $timestamp = '')
 	{
 		if (empty($blog_id) || empty($timestamp)) {
 			$blog_id = absint($_POST['blog_id']);

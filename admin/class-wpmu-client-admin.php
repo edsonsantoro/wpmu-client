@@ -2,6 +2,10 @@
 
 namespace Wpmu_Client;
 
+use DateTime;
+
+use function Ramsey\Uuid\v1;
+
 require_once(__DIR__ . '/class-wpmu-client-admin-notices.php');
 /**
  * The admin-specific functionality of the plugin.
@@ -206,8 +210,8 @@ class Admin_Functions
 	 */
 	public function enqueue_scripts()
 	{
-		wp_deregister_script( 'elementor-pro-webpack-runtime' );
-		wp_dequeue_script( 'elementor-pro-webpack-runtime' );
+		wp_deregister_script('elementor-pro-webpack-runtime');
+		wp_dequeue_script('elementor-pro-webpack-runtime');
 		wp_enqueue_script($this->plugin_name, plugin_dir_url(__FILE__) . 'js/wpmu-client-admin.js', array('jquery'), $this->version, false);
 	}
 
@@ -319,10 +323,10 @@ class Admin_Functions
 		}
 
 		// Sanitize the client name to avoid bad folder names
-		$client = sanitize_title($client);
+		$client = sanitize_user($client);
 
 		// Get blog name sanitized for project folder creation
-		$blogname = sanitize_title(get_blog_details($blog_id)->blogname);
+		$blogname = sanitize_user(get_blog_details($blog_id)->blogname);
 
 		// Set path to create folders from options or set to default
 		$opts = get_site_option($this->network_settings_slug, ['local_path' => './static']);
@@ -431,7 +435,7 @@ class Admin_Functions
 		}
 
 		$ss->set('urls_to_exclude', $urls_to_exclude);
-		$ss->set('clear_directory_before_export', true);
+		$ss->set('clear_directory_before_export', 'on');
 		$ss->set('delivery_method', 'local');
 		$ss->set('local_dir', $path);
 		$ss->save();
@@ -490,44 +494,81 @@ class Admin_Functions
 	}
 
 	/**
+	 * Schedule an action with the hook 'wpmu_schedule_export' to run as soon as possible.
+	 */
+	public function schedule_next_export()
+	{
+		if (false === as_has_scheduled_action('wpmu_schedule_export')) {
+			$blog_id = absint($_POST['blog_id']);
+			$timestamp = sanitize_text_field($_POST['timestamp']);
+
+			$reference = new DateTime($timestamp);
+			$reference = $reference->format('j-M-Y-H\h-i\m-s\s');
+
+			$id = as_enqueue_async_action('wpmu_schedule_export', ['blog_id' => $blog_id, 'timestamp' => $timestamp], true);
+			$result = ['result' => "Processo iniciado com id: " . $id . ". Iniciando ...", 'reference' => $reference];
+			wp_send_json_success($result, 200);
+		}
+		wp_send_json_error(["result" => "Export já na fila"]);
+		wp_die();
+	}
+
+	/**
 	 * The function responsible for exporting static generated sites to remote FTPs
 	 */
-	public function wpmu_init_export()
+	public function wpmu_init_export(int $blog_id, string $timestamp)
 	{
-		// Get ftp credentials, client name, and export path
-		$client				= get_option($this->blog_settings_slug . "_client", false);
-		$ftp_host 			= get_option($this->blog_settings_slug . "_ftp_host", false);
-		$ftp_user			= get_option($this->blog_settings_slug . "_ftp_user", "anonymous");
-		$ftp_pass	 		= (false != get_option($this->blog_settings_slug . "_ftp_pass")) ? ',"' . get_option($this->blog_settings_slug . "_ftp_pass") . '" ' : ' '; // Do not remove whitespaces
-		$ftp_port 			= (false != get_option($this->blog_settings_slug . "_ftp_port")) ? '-p ' . get_option($this->blog_settings_slug . "_ftp_port") . ' ' : '-p 21 '; // Do not remove whitespaces
-		$ftp_path			= (false != get_option($this->blog_settings_slug . "_ftp_path")) ? get_option($this->blog_settings_slug . "_ftp_path") : './';
-		$ftp_sync_new_only  = (false != get_option($this->blog_settings_slug . "_ftp_sync_new_only")) ? "-n " : "";
-		$export_path		= get_option($this->blog_settings_slug . "_export_path", false);
+		// Let's try to get this blog by id
+		$site = get_site($blog_id);
+		if ($site == null) {
+			// The blog does not exist, log and abort
+			$notice = __("WPMU-CLIENT: Erro na função wpmu_init_export, blog_id inválido", $this->plugin_name);
+			error_log($notice);
+			return false;
+		}
 
-		// If not FTP credentials, abort
+		$reference = new DateTime($timestamp);
+		$reference = $reference->format('j-M-Y-H\h-i\m-s\s');
+
+		// Set reusable variables
+		$blog_id = $site->blog_id;
+		$blog_settings_slug = $this->blog_settings_slug;
+
+		// Get ftp credentials, client name, and export path
+		$client				= get_blog_option($blog_id, $blog_settings_slug . "_client", false);
+		$ftp_host 			= get_blog_option($blog_id, $blog_settings_slug . "_ftp_host", false);
+		$ftp_user			= get_blog_option($blog_id, $blog_settings_slug . "_ftp_user", "anonymous");
+		$ftp_pass	 		= (false != get_blog_option($blog_id, $blog_settings_slug . "_ftp_pass")) ? ',"' . get_blog_option($blog_id, $blog_settings_slug . "_ftp_pass") . '" ' : ' '; // Do not remove whitespaces
+		$ftp_port 			= (false != get_blog_option($blog_id, $blog_settings_slug . "_ftp_port")) ? '-p ' . get_blog_option($blog_id, $blog_settings_slug . "_ftp_port") . ' ' : '-p 21 '; // Do not remove whitespaces
+		$ftp_path			= (false != get_blog_option($blog_id, $blog_settings_slug . "_ftp_path")) ? get_blog_option($blog_id, $blog_settings_slug . "_ftp_path") : './';
+		$ftp_sync_new_only  = (false != get_blog_option($blog_id, $blog_settings_slug . "_ftp_sync_new_only")) ? "-n " : "";
+		$export_path		= get_blog_option($blog_id, $blog_settings_slug . "_export_path", false);
+
+		// If no FTP credentials, abort
 		if (!$ftp_host) {
-			$notice = "Credenciais de FTP não registrados. Abortando.";
+			$notice = $this->plugin_name . ": Credenciais de FTP não registrados. Abortando.";
 			error_log($notice);
 			new Notice($notice, 'error', true);
 			wp_mail(wp_get_current_user()->data->user_email, "WPMU-Client", $notice);
-			return;
+			return false;
 		}
 
 		// If no client name, abort
 		if (!$client) {
-			$notice = "Nome de cliente não definido. Abortando.";
+			$notice = "WPMU-CLIENT: Nome de cliente não definido. Abortando.";
 			error_log($notice);
 			new Notice($notice, 'error', true);
 			wp_mail(wp_get_current_user()->data->user_email, "WPMU-Client", $notice);
-			return;
+			return false;
 		}
 
+		// If no export path, abort
 		if (empty($export_path)) {
-			$notice = "Caminho de exportação não definido. Abortando.";
+			$notice = "WPMU-CLIENT: Caminho de exportação não definido. Abortando.";
 			error_log($notice);
 			new Notice($notice, 'error', true);
 			wp_mail(wp_get_current_user()->data->user_email, "WPMU-Client", $notice);
-			return;
+			return false;
 		}
 
 		/* The command. Note that we depend of LFTP command to sync folder.
@@ -537,27 +578,54 @@ class Admin_Functions
 		$lftp = $this->command_exists("lftp");
 
 		if (!$lftp) {
-			$notice = "Erro: O sistema não contém o comando LFTP. Abortando.";
+			$notice = $this->plugin_name . ": Erro: O sistema não contém o comando LFTP. Abortando.";
 			error_log($notice);
 			new Notice($notice, 'error', true);
 			wp_mail(wp_get_current_user()->data->user_email, "WPMU-Client", $notice);
-			return;
+			return false;
 		}
 
+		//$log_path = plugin_dir_path(dirname(__FILE__)) . "exports/".$client."/".$site->blogname."/logs/transfer-" . $reference;
 
-		$cmd = 'lftp -u "' . $ftp_user . '"' . $ftp_pass . $ftp_port . $ftp_host . ' -e "set ftp:ssl-allow no; mirror -c '. $ftp_sync_new_only.' -R ' . $export_path  . '/ ' . $ftp_path . '"';
-		
-		$this->execute_command($cmd);
+		// Lets build the command argument
+		$cmd = 'lftp -u "' . $ftp_user . '"' . $ftp_pass . $ftp_port . $ftp_host . ' -e "set ftp:ssl-allow no;set log:file/xfer "' . $export_path . '/logs/transfer-' . $reference . '";mirror -c ' . $ftp_sync_new_only . ' -R ' . $export_path  . '/ ' . $ftp_path . '"';
 
-		while (@ob_end_flush()); // end all output buffers if any
+		$result = $this->execute_command($cmd, $export_path);
 
-		$proc = popen($cmd, 'r');
-		while (!feof($proc)) {
-			echo fread($proc, 4096);
-			@flush();
+		return true;
+		// This is required to terminate immediately and return a proper response
+		wp_die();
+	}
+
+	public function read_export_log(string $blog_id = '', string $timestamp = '')
+	{
+		if (empty($blog_id) || empty($timestamp)) {
+			$blog_id = absint($_POST['blog_id']);
+			$timestamp = sanitize_text_field($_POST['exportRef']);
+			$reference = new DateTime($timestamp);
+			$reference = $reference->format('j-M-Y-H\h-i\m-s\s');
 		}
 
-		wp_die(); // this is required to terminate immediately and return a proper response
+		$export_path = get_blog_option($blog_id, $this->blog_settings_slug . "_export_path");
+
+		if (!$export_path) {
+			$message = __("Não foi possível encontrar o site ou o caminho de exportação.", $this->plugin_name);
+			error_log($message);
+			wp_send_json_error($message);
+			wp_die();
+		}
+
+		$log = fopen($export_path . "/logs/transfer-" . $reference, 'r');
+
+		if ($log) {
+			while (!feof($log)) {
+				$line = fgets($log);
+				wp_send_json_success($line);
+			}
+			fclose($log);
+		}
+
+		wp_die();
 	}
 
 	/**
@@ -615,20 +683,19 @@ class Admin_Functions
 	 *  @return array   exit_status  :  exit status of the executed command
 	 *                  output       :  console output of the executed command
 	 */
-	private function execute_command($cmd)
+	private function execute_command($cmd, $export_path)
 	{
 
 		while (@ob_end_flush()); // end all output buffers if any
 
 		$proc = popen("$cmd 2>&1 ; echo Exit status : $?", 'r');
 
-		$live_output     = "";
 		$complete_output = "";
+		$live_output = "";
 
 		while (!feof($proc)) {
 			$live_output     = fread($proc, 4096);
 			$complete_output = $complete_output . $live_output;
-			print_r($live_output);
 			@flush();
 		}
 

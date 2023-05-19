@@ -2,6 +2,8 @@
 
 namespace Wpmu_Client;
 
+use DateTime;
+
 /**
  * Provide a admin area view for the plugin
  *
@@ -22,6 +24,10 @@ class Admin_Settings_Page
 	 * @var string
 	 */
 	protected $plugin_name;
+
+	protected $has_actions;
+
+	protected $reference;
 
 	/**
 	 * This will be used for the SubMenu URL in the settings page and to verify which variables to save.
@@ -70,7 +76,6 @@ class Admin_Settings_Page
 				<?php
 				settings_fields($this->blog_settings_slug);
 				do_settings_sections($this->blog_settings_slug . '-admin');
-				submit_button();
 				?>
 			</form>
 		</div>
@@ -119,13 +124,29 @@ class Admin_Settings_Page
 		);
 	}
 
+	public function get_export_actions()
+	{
+
+		$this->has_actions = as_has_scheduled_action('wpmu_schedule_export');
+
+		$actions = as_get_scheduled_actions();
+		$blog_id = get_current_blog_id();
+
+		foreach ($actions as $key => $action) {
+			$args = $action->get_args();
+			if (isset($args['blog_id']) && $args['blog_id'] == $blog_id && isset($args['timestamp'])) {
+				$this->reference = $args['timestamp'];
+			}
+		}
+	}
+
 	public function wpmu_client_sanitize($input)
 	{
 		$sanitary_values = array();
 		if (isset($input['local_path'])) {
 			$sanitary_values['local_path'] = sanitize_text_field($input['local_path']);
 		}
-		
+
 		return $sanitary_values;
 	}
 
@@ -136,20 +157,30 @@ class Admin_Settings_Page
 	public function export_button_callback()
 	{
 		printf(
-			'<input class="button button-secondary" type="button" name="'.$this->blog_settings_slug.'[export_button]" id="export_button" value="%s">',
+			'<input class="button button-secondary" type="button" name="' . $this->blog_settings_slug . '[export_button]" id="export_button" value="%s">',
 			"Iniciar Exportação"
 		);
 
 		printf(
-			'<input type="hidden" name="'.$this->blog_settings_slug.'[blog_id]" id="blog_id" value="%s" />',
+			'<input type="hidden" name="' . $this->blog_settings_slug . '[blog_id]" id="blog_id" value="%s" />',
 			get_current_blog_id()
+		);
+
+		printf(
+			'<input type="hidden" name="' . $this->blog_settings_slug . '[reference]" id="reference" value="%s" />',
+			$this->reference
+		);
+
+		printf(
+			'<input type="hidden" name="' . $this->blog_settings_slug . '[finished]" id="finished" value="%s" />',
+			($this->has_actions) ? 'false' : 'true'
 		);
 	}
 
 	public function show_config_callback()
-	{	
+	{
 		printf(
-			'<a href="%s" class="button button-secondary" type="button" name="'.$this->blog_settings_slug.'[show_config]" id="show_config" value="">%s</a>',
+			'<a href="%s" class="button button-secondary" type="button" name="' . $this->blog_settings_slug . '[show_config]" id="show_config" value="">%s</a>',
 			add_query_arg(
 				array(
 					'page' => 'genpage',
@@ -163,17 +194,27 @@ class Admin_Settings_Page
 
 	public function export_log_callback()
 	{
+		$content = 'O log aparecerá aqui...';
+		if (!$this->has_actions && !empty($this->reference)) {
+			$blog_id = get_current_blog_id();
+			$export_path = get_blog_option($blog_id, $this->blog_settings_slug . "_export_path");
+			$reference = new DateTime($this->reference);
+			$reference = $reference->format('j-M-Y-H\h-i\m-s\s');
+			if (is_file($export_path . "/logs/transfer-" . $reference)) {
+				$content = file_get_contents($export_path . "/logs/transfer-" . $reference);
+			}
+		}
 
 		printf(
-			'<pre name="'.$this->blog_settings_slug.'[export_log]" id="export_log">%s</pre>',
-			'O log aparecerá aqui...'
+			'<pre name="' . $this->blog_settings_slug . '[export_log]" id="export_log">%s</pre>',
+			$content
 		);
 	}
 
 	public function export_local_back()
 	{
 		printf(
-			'<input class="regular-text" type="text" name="'.$this->blog_settings_slug.'[local_path]" id="local_path" value="%s"><pre id="return"></pre>',
+			'<input class="regular-text" type="text" name="' . $this->blog_settings_slug . '[local_path]" id="local_path" value="%s"><pre id="return"></pre>',
 			get_option($this->blog_settings_slug . "_local_path", "")
 		);
 	}
@@ -181,7 +222,7 @@ class Admin_Settings_Page
 	public function ftp_user_callback()
 	{
 		printf(
-			'<input class="regular-text" type="text" name="'.$this->blog_settings_slug.'[ftp_user]" id="ftp_user" value="%s">',
+			'<input class="regular-text" type="text" name="' . $this->blog_settings_slug . '[ftp_user]" id="ftp_user" value="%s">',
 			get_option($this->blog_settings_slug . "_ftp_user", "")
 		);
 	}
@@ -189,7 +230,7 @@ class Admin_Settings_Page
 	public function ftp_host_callback()
 	{
 		printf(
-			'<input class="regular-text" type="text" name="'.$this->blog_settings_slug.'[ftp_host]" id="ftp_host" value="%s">',
+			'<input class="regular-text" type="text" name="' . $this->blog_settings_slug . '[ftp_host]" id="ftp_host" value="%s">',
 			get_option($this->blog_settings_slug . "_ftp_host", "")
 		);
 	}
@@ -197,7 +238,7 @@ class Admin_Settings_Page
 	public function ftp_pass_callback()
 	{
 		printf(
-			'<input class="regular-text" type="password" name="'.$this->blog_settings_slug.'[ftp_pass]" id="ftp_pass" value="%s">',
+			'<input class="regular-text" type="password" name="' . $this->blog_settings_slug . '[ftp_pass]" id="ftp_pass" value="%s">',
 			get_option($this->blog_settings_slug . "_ftp_pass", "")
 		);
 	}
@@ -205,7 +246,7 @@ class Admin_Settings_Page
 	public function ftp_port_callback()
 	{
 		printf(
-			'<input class="regular-text" type="number" name="'.$this->blog_settings_slug.'[ftp_port]" id="ftp_port" value="%s">',
+			'<input class="regular-text" type="number" name="' . $this->blog_settings_slug . '[ftp_port]" id="ftp_port" value="%s">',
 			get_option($this->blog_settings_slug . "_ftp_port", "")
 		);
 	}

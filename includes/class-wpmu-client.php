@@ -111,7 +111,7 @@ class Wpmu_Client
 		if (defined('WPMU_CLIENT_VERSION')) {
 			$this->version = WPMU_CLIENT_VERSION;
 		} else {
-			$this->version = '1.0.0';
+			$this->version = '1.1.0';
 		}
 		$this->plugin_name = 'wpmu-client';
 		$this->blog_settings_slug = 'wpmu_client_blog_settings';
@@ -148,7 +148,11 @@ class Wpmu_Client
 
 		// Set defaults
 		$this->can_run = true;
-
+		
+		/**
+		 * The class that will handle scheduled actions
+		 */
+		require_once( plugin_dir_path(dirname(__FILE__)) . 'libraries/action-scheduler/action-scheduler.php' );
 		/**
 		 * The class responsible for orchestrating the actions and filters of the
 		 * core plugin.
@@ -191,6 +195,7 @@ class Wpmu_Client
 		 * The class responsible for displaying admin notices.
 		 */
 		require_once plugin_dir_path(dirname(__FILE__)) . 'admin/class-wpmu-client-admin-notices.php';
+
 
 		/**
 		 * The class responsible for adding clients as part of the network.
@@ -265,8 +270,11 @@ class Wpmu_Client
 		// ---------------- Site Settings Page actions and filters ----------------
 		// Add single site menu item
 		$this->loader->add_action('admin_menu', $blog_admin_page, 'wpmu_client_add_plugin_page');
+		// Check if we have an export ongoing for admin screen
+		$this->loader->add_action('admin_init', $blog_admin_page, 'get_export_actions');
 		// Render single site settings page
 		$this->loader->add_action('admin_init', $blog_admin_page, 'wpmu_client_page_init');
+		
 
 
 		// ---------------- General Admin Functions actions and filters ----------------
@@ -288,18 +296,14 @@ class Wpmu_Client
 		$this->loader->add_action('admin_enqueue_scripts', $plugin_admin, 'enqueue_scripts');
 		// Always set Simply Static options to our defaults when changing blogs
 		$this->loader->add_action('switch_blog', $plugin_admin, 'set_ss_options', 10, 3);
-		// The Ajax function responsible for exporting static generated sites to remote FTPs
-		$this->loader->add_action('wp_ajax_wpmu_init_export', $plugin_admin, 'wpmu_init_export');
+		// The Ajax function responsible for scheduling next static generated sites export to remote FTPs
+		$this->loader->add_action('wp_ajax_wpmu_init_export', $plugin_admin, 'schedule_next_export');
+		// Action that the scheduler will call to begin export
+		$this->loader->add_action('wpmu_schedule_export', $plugin_admin, 'wpmu_init_export', 10, 2);
+		// The Ajax function that reads the export log by blog id and reference
+		$this->loader->add_action('wp_ajax_read_export_log', $plugin_admin, 'read_export_log');
 
-		add_action('wp_print_scripts', function(){
-			//wp_deregister_script( 'elementor-pro-webpack-runtime' );
-			//wp_dequeue_script( 'elementor-pro-webpack-runtime' );
-		});
-
-		add_filter('ss_match_tags', function($match_tags){
-			$match_tags['div'] = array( 'data-settings' );
-			return $match_tags;
-		});
+		
 	}
 
 	/**
@@ -343,6 +347,8 @@ class Wpmu_Client
 			new Notice($message, $type, true, true);
 		}
 		require_once(ABSPATH . 'wp-admin/includes/plugin.php');
+
+		// TODO Verificar a necessidade de desativar em cada site. 
 		deactivate_plugins("wpmu-client/wpmu-client.php", false, true);
 		deactivate_plugins("wpmu-client/wpmu-client.php", false, false);
 	}

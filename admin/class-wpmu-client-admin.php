@@ -599,11 +599,9 @@ class Admin_Functions
 
 	public function read_export_log($blog_id = '', $timestamp = '')
 	{
-		if (empty($blog_id) || empty($timestamp)) {
+		if (empty($blog_id) && empty($timestamp)) {
 			$blog_id = absint($_POST['blog_id']);
-			$timestamp = sanitize_text_field($_POST['exportRef']);
-			$reference = new DateTime($timestamp);
-			$reference = $reference->format('j-M-Y-H\h-i\m-s\s');
+			$reference = $_POST['exportRef'];
 		}
 
 		$export_path = get_blog_option($blog_id, $this->blog_settings_slug . "_export_path");

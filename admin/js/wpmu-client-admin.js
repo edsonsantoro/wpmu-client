@@ -43,7 +43,6 @@
                 setInterval(function () {
                     jQuery.post(ajaxurl, data, function (response) {
                         if (!response.result) {
-                            export_box.text("Erro");
                             clearInterval();
                         }
                         export_box.text(response.data);
@@ -67,6 +66,7 @@
 
         $("input#export_button").on("click", function (e) {
             button.val("Exportando...");
+            button.attr("disabled", true);
             export_box.text("...");
 
             let dataExport = {

@@ -295,7 +295,7 @@ class Wpmu_Client
 		// Register the JavaScript for the admin area.
 		$this->loader->add_action('admin_enqueue_scripts', $plugin_admin, 'enqueue_scripts');
 		// Always set Simply Static options to our defaults when changing blogs
-		$this->loader->add_action('switch_blog', $plugin_admin, 'set_ss_options', 10, 3);
+		$this->loader->add_action('switch_blog', $plugin_admin, 'set_ss_options', 15, 3);
 		// The Ajax function responsible for scheduling next static generated sites export to remote FTPs
 		$this->loader->add_action('wp_ajax_wpmu_init_export', $plugin_admin, 'schedule_next_export');
 		// Action that the scheduler will call to begin export

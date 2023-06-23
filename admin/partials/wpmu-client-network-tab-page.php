@@ -126,6 +126,22 @@ class Network_Tab_Page
         );
 
         add_settings_section(
+            $this->blog_settings_slug . "_ss_section",
+            __("Opções do Gerador", $this->plugin_name),
+            [$this, "ss_section_info"],
+            $this->blog_settings_slug . "-tab"
+        );
+
+        add_settings_field(
+            "ss_overwrite",
+            __('Definir opções do Simply Static automaticamente?', $this->plugin_name),
+            [$this, "ss_overwrite_callback"],
+            $this->blog_settings_slug . "-tab",
+            $this->blog_settings_slug . "_ss_section",
+            $blog_id
+        );
+
+        add_settings_section(
             $this->blog_settings_slug . "_ftp_section",
             __("Credenciais FTP", $this->plugin_name),
             [$this, "ftp_section_info"],
@@ -185,6 +201,7 @@ class Network_Tab_Page
             $this->blog_settings_slug . "_ftp_section",
             $blog_id
         );
+        
 
         add_settings_field(
             "show_export_screen",
@@ -220,6 +237,13 @@ class Network_Tab_Page
      * Render infos on section
      */
     public function ftp_section_info()
+    {
+    }
+
+        /**
+     * Render infos on section
+     */
+    public function ss_section_info()
     {
     }
 
@@ -272,6 +296,16 @@ class Network_Tab_Page
         );
     }
 
+    public function ss_overwrite_callback(int $blog_id)
+    {
+        $checked = (get_blog_option($blog_id, $this->blog_settings_slug . "_ss_overwrite", false)) ? 'checked' : '';
+        printf(
+            '<input type="checkbox" name="' . $this->blog_settings_slug . '[ss_overwrite]" id="ss_overwrite" %s>
+            <label for="ss_overwrite">Marque esta caixa para definir automaticamente algumas opções importantes do Simply Static.</label>',
+            $checked
+        );
+    }
+
     public function show_export_screen_callback()
     {   
         $id = $_GET['id'];
@@ -300,7 +334,8 @@ class Network_Tab_Page
             "ftp_pass" => "",
             "ftp_port" => "",
             "ftp_path" => "",
-            "ftp_sync_new_only" => 0
+            "ftp_sync_new_only" => 0,
+            "ss_overwrite" => 0,
         ];
 
         $posted = $_POST[$this->blog_settings_slug];

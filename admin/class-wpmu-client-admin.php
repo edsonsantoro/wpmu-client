@@ -4,9 +4,8 @@ namespace Wpmu_Client;
 
 use DateTime;
 
-use function Ramsey\Uuid\v1;
-
 require_once(__DIR__ . '/class-wpmu-client-admin-notices.php');
+
 /**
  * The admin-specific functionality of the plugin.
  *
@@ -353,7 +352,7 @@ class Admin_Functions
 			$message = 'O plugin WPMU-Client não tem permissão para escrever novos diretórios. Verifique seu servidor.';
 			error_log($message);
 			new Notice($message, 'error', true);
-			wp_mail(wp_get_current_user()->data->user_email, "WPMU-Client", $notice);
+			wp_mail(wp_get_current_user()->data->user_email, "WPMU-Client", $message);
 			return;
 		}
 
@@ -388,14 +387,14 @@ class Admin_Functions
 			$message = 'O plugin WPMU-Client não conseguiu definir uma opção do blog. Verifique o código.';
 			error_log($message);
 			new Notice($message, 'error', true);
-			wp_mail(wp_get_current_user()->data->user_email, "WPMU-Client", $notice);
+			wp_mail(wp_get_current_user()->data->user_email, "WPMU-Client", $message);
 			return;
 		}
 
 		// Now, save the full export path
 		$new_export_path = update_blog_option($blog_id, $this->blog_settings_slug . "_export_path", $path . '/' . $client . '/' . $blogname);
 		if ($new_export_path != false) get_blog_option($blog_id, $this->blog_settings_slug . "_export_path", false);
-		if ($new_export_path) $this->set_ss_options($blog_id, 0, "switch", $new_export_path);
+		if ($new_export_path) $this->set_ss_options($blog_id, 0, "switch");
 
 		return true;
 	}
@@ -406,20 +405,21 @@ class Admin_Functions
 	 * @param int $prev_blog_id		Previous blog ID.
 	 * @param string $context		Additional context. Accepts 'switch' when called from switch_to_blog() or 'restore' when called from restore_current_blog() .
 	 */
-	public function set_ss_options(int $new_blog_id, int $prev_blog_id, string $context = null, string $path = null)
+	public function set_ss_options($new_blog_id, $prev_blog_id, $context)
 	{
+		// Check if we can overwrite this blog's simply static options
+		$overwrite = get_blog_option($new_blog_id, $this->blog_settings_slug . "_ss_overwrite");
+		if ($overwrite == '' || $overwrite == false) return;
 
 		// Working only when switching blogs
 		if ($context == "restore") return;
 
-		// Initialize Simply Static Options instance and set options
-		$path = get_option($this->blog_settings_slug . "_export_path", "");
+		// Get export path
+		$path = get_blog_option($new_blog_id, $this->blog_settings_slug . "_export_path", "");
+		// Get Simply Static options
+		$options = get_blog_option($new_blog_id, 'simply-static');
 
-		$ss = \Simply_Static\Options::instance();
-
-		// Exclude pages if not set.
-		$urls_to_exclude = $ss->get('urls_to_exclude');
-
+		$urls_to_exclude = $options['urls_to_exclude'];
 		$exclude_feed = array(
 			site_url() . DIRECTORY_SEPARATOR . 'feed'      => array(
 				'url'           => site_url() . DIRECTORY_SEPARATOR . 'feed',
@@ -433,12 +433,12 @@ class Admin_Functions
 		} else {
 			$urls_to_exclude = $exclude_feed;
 		}
-
-		$ss->set('urls_to_exclude', $urls_to_exclude);
-		$ss->set('clear_directory_before_export', 'on');
-		$ss->set('delivery_method', 'local');
-		$ss->set('local_dir', $path);
-		$ss->save();
+		$options['force_replace_url'] = 'on';
+		$options['urls_to_exclude'] = $urls_to_exclude;
+		$options['clear_directory_before_export'] = 'on';
+		$options['delivery_method'] = 'local';
+		$options['local_dir'] = $path;
+		update_blog_option($new_blog_id, 'simply-static', $options);
 	}
 
 	/**
@@ -585,12 +585,12 @@ class Admin_Functions
 			return false;
 		}
 
-		//$log_path = plugin_dir_path(dirname(__FILE__)) . "exports/".$client."/".$site->blogname."/logs/transfer-" . $reference;
+		$log_path = plugin_dir_path(dirname(__FILE__)) . "exports/" . $client . "/" . $site->blogname . "/logs/transfer-" . $reference;
 
 		// Lets build the command argument
 		$cmd = 'lftp -u "' . $ftp_user . '"' . $ftp_pass . $ftp_port . $ftp_host . ' -e "set ftp:ssl-allow no;set log:file/xfer "' . $export_path . '/logs/transfer-' . $reference . '";mirror -c ' . $ftp_sync_new_only . ' -R ' . $export_path  . '/ ' . $ftp_path . '"';
 
-		$result = $this->execute_command($cmd, $export_path);
+		$result = $this->execute_command($cmd, $export_path, $log_path);
 
 		return true;
 		// This is required to terminate immediately and return a proper response
@@ -681,10 +681,14 @@ class Admin_Functions
 	 *  @return array   exit_status  :  exit status of the executed command
 	 *                  output       :  console output of the executed command
 	 */
-	private function execute_command($cmd, $export_path)
+	private function execute_command($cmd, $export_path, $log_path)
 	{
 
 		while (@ob_end_flush()); // end all output buffers if any
+
+		$out = null;
+
+		exec($cmd . " > " . $log_path, $out);
 
 		$proc = popen("$cmd 2>&1 ; echo Exit status : $?", 'r');
 
@@ -709,43 +713,6 @@ class Admin_Functions
 		);
 	}
 
-	// TODO: Tonar essa função prática. Ainda não é funcional.
-	/**
-	 * Test a FTP credentials
-	 *
-	 * @param int $blog_id The blog id
-	 *
-	 * @return bool If connection works
-	 *
-	 */
-	private function wpmu_ftp_connect(int $blog_id)
-	{
-
-		if (empty($blog_id)) $blog_id = get_current_blog_id();
-
-		$options = get_blog_option($blog_id, $this->blog_settings_slug, false);
-
-		if (!$options) {
-			$notice = "Credenciais de FTP não registradas";
-			error_log($notice);
-			$message = _($notice, $this->plugin_name);
-			new Notice($message, 'error', true);
-			wp_mail(wp_get_current_user()->data->user_email, "WPMU-Client", $notice);
-			wp_die($message);
-			return;
-		}
-
-		$ftp_host 		= $options['ftp_host'];
-		$ftp_user		= $options['ftp_user'];
-		$ftp_pass 		= $options['ftp_pass'];
-		$ftp_port 		= $options['ftp_port'];
-		$ftp_folder		= $options['remote_path'];
-
-		$cmd = 'lftp -u "' . $ftp_user . '","' . $ftp_pass . '" -p ' . $ftp_port . ' ' . $ftp_host . ' -e "set ftp:ssl-allow no; ls"';
-
-		$this->execute_command($cmd);
-	}
-
 	/**
 	 * Create directories
 	 *
@@ -761,7 +728,7 @@ class Admin_Functions
 			$message = _("Caminho não definido.", $this->plugin_name);
 			error_log($message);
 			new Notice($message, 'error', true);
-			wp_mail(wp_get_current_user()->data->user_email, "WPMU-Client", $notice);
+			wp_mail(wp_get_current_user()->data->user_email, "WPMU-Client", $message);
 			return;
 		}
 
@@ -793,7 +760,7 @@ class Admin_Functions
 			$message = __("Função has_right precisa de um caminho e um cliente.", $this->plugin_name);
 			error_log($message);
 			new Notice($message, 'error', true);
-			wp_mail(wp_get_current_user()->data->user_email, "WPMU-Client", $notice);
+			wp_mail(wp_get_current_user()->data->user_email, "WPMU-Client", $message);
 			return false;
 		}
 
@@ -814,7 +781,7 @@ class Admin_Functions
 			$message = __("Função check_dir_exists precisa de um caminho e um cliente.", $this->plugin_name);
 			error_log($message);
 			new Notice($message, 'error', true);
-			wp_mail(wp_get_current_user()->data->user_email, "WPMU-Client", $notice);
+			wp_mail(wp_get_current_user()->data->user_email, "WPMU-Client", $message);
 			return false;
 		}
 

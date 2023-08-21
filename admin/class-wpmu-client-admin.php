@@ -585,12 +585,17 @@ class Admin_Functions
 			return false;
 		}
 
-		$log_path = plugin_dir_path(dirname(__FILE__)) . "exports/" . $client . "/" . $site->blogname . "/logs/transfer-" . $reference;
+//		$export_path = '/var/www/gen.drb.marketing/wp-content/plugins/wpmu-client/exports';
+//		$log_path = "/var/www/gen.drb.marketing/wp-content/plugins/wpmu-client/exports/logs/transfer-" . $reference;
+
+		$ss_options = get_option('simply-static');
+		$temp_files = $ss_options['temp_files_dir'];
+		$log_path = $temp_files . 'logs/transfer-' . $reference;
 
 		// Lets build the command argument
-		$cmd = 'lftp -u "' . $ftp_user . '"' . $ftp_pass . $ftp_port . $ftp_host . ' -e "set ftp:ssl-allow no;set log:file/xfer "' . $export_path . '/logs/transfer-' . $reference . '";mirror -c ' . $ftp_sync_new_only . ' -R ' . $export_path  . '/ ' . $ftp_path . '"';
+		$cmd = 'lftp -u "' . $ftp_user . '"' . $ftp_pass . $ftp_port . $ftp_host . ' -e "set ftp:ssl-allow no;set log:file/xfer "' . $temp_files . 'logs/transfer-log-' . $reference . '";mirror -c ' . $ftp_sync_new_only . ' -R ' . $export_path  . '/ ' . $ftp_path . '"';
 
-		$result = $this->execute_command($cmd, $export_path, $log_path);
+		$result = $this->execute_command($cmd, $temp_files, $log_path);
 
 		return true;
 		// This is required to terminate immediately and return a proper response
@@ -604,7 +609,8 @@ class Admin_Functions
 			$reference = $_POST['exportRef'];
 		}
 
-		$export_path = get_blog_option($blog_id, $this->blog_settings_slug . "_export_path");
+		$export_path = get_blog_option($blog_id, 'simply-static')['temp_files_dir'];
+//		$export_path = get_blog_option($blog_id, $this->blog_settings_slug . "_export_path");
 
 		if (!$export_path) {
 			$message = __("Não foi possível encontrar o site ou o caminho de exportação.", $this->plugin_name);
@@ -613,7 +619,12 @@ class Admin_Functions
 			wp_die();
 		}
 
-		$log = fopen($export_path . "/logs/transfer-" . $reference, 'r');
+		if(!file_exists($export_path . 'logs/transfer-' . $reference)) {
+			wp_die();
+		}
+
+
+		$log = fopen($export_path . "logs/transfer-" . $reference, 'r');
 
 		if ($log) {
 			while (!feof($log)) {

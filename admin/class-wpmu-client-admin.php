@@ -412,6 +412,7 @@ class Admin_Functions
 	 */
 	public function show_client_field()
 	{
+		get_option($this->blog_settings_slug . "_folder_created")
 		?>
 		<div class="wrap">
 			<h2>
@@ -523,9 +524,9 @@ class Admin_Functions
 		// Folder was not created, continue and get client name for folder
 		$client = get_blog_option($blog_id, $this->blog_settings_slug . "_client", "");
 
-		// If no client name was defined (for existing blogs) get blog id
+		// We don't have a client name for this project, so abort execution
 		if (empty($client)) {
-			$client = 'blog-' . $blog_id;
+			return;
 		}
 
 		// Sanitize the client name to avoid bad folder names

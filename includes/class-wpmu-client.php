@@ -298,12 +298,19 @@ class Wpmu_Client
 		$this->loader->add_action('switch_blog', $plugin_admin, 'set_ss_options', 15, 3);
 		// The Ajax function responsible for scheduling next static generated sites export to remote FTPs
 		$this->loader->add_action('wp_ajax_wpmu_init_export', $plugin_admin, 'schedule_next_export');
+		// Ajax function responsible to pass the next log file reference to script read
+		$this->loader->add_action('wp_ajax_get_new_log', $plugin_admin, 'get_new_log');
 		// Action that the scheduler will call to begin export
 		$this->loader->add_action('wpmu_schedule_export', $plugin_admin, 'wpmu_init_export', 10, 2);
 		// The Ajax function that reads the export log by blog id and reference
 		$this->loader->add_action('wp_ajax_read_export_log', $plugin_admin, 'read_export_log');
-
-		
+		// Actions that calls functions to remove query strings from styles and scripts
+		$this->loader->add_action('wp_print_scripts', $plugin_admin, 'remove_scripts_query_string', 999);
+		$this->loader->add_action('wp_print_footer_scripts', $plugin_admin, 'remove_scripts_query_string', 999);
+		$this->loader->add_action('admin_print_styles', $plugin_admin, 'remove_styles_query_strings', 999);
+		$this->loader->add_action('wp_print_styles', $plugin_admin, 'remove_styles_query_strings', 999);
+		// Ajax function that checks the export status to client ftp
+		$this->loader->add_action('wp_ajax_check_export_status', $plugin_admin, 'check_export_status');
 	}
 
 	/**

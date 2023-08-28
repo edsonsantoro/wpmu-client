@@ -94,14 +94,14 @@ class Admin_Settings_Page
 
 		add_settings_section(
 			'wpmu_client_upload', // id
-			'Exportação', // title
+			'Envio', // title
 			array($this, 'wpmu_client_section_info'), // callback
 			$this->blog_settings_slug . '-admin' // page
 		);
 
 		add_settings_field(
 			'show_config', // id
-			'Ver Configuração de Exportação', // title
+			'Ver Configuração de Envio', // title
 			array($this, 'show_config_callback'), // callback
 			$this->blog_settings_slug . '-admin', // page
 			'wpmu_client_upload' // section
@@ -109,7 +109,7 @@ class Admin_Settings_Page
 
 		add_settings_field(
 			'export_log', // id
-			'Log de exportação', // title
+			'Log de envio', // title
 			array($this, 'export_log_callback'), // callback
 			$this->blog_settings_slug . '-admin', // page
 			'wpmu_client_upload' // section
@@ -117,7 +117,7 @@ class Admin_Settings_Page
 
 		add_settings_field(
 			'export_button', // id
-			'Iniciar Exportação', // title
+			'Iniciar Envio', // title
 			array($this, 'export_button_callback'), // callback
 			$this->blog_settings_slug . '-admin', // page
 			'wpmu_client_upload' // section
@@ -158,7 +158,7 @@ class Admin_Settings_Page
 	{
 		printf(
 			'<input class="button button-secondary" type="button" name="' . $this->blog_settings_slug . '[export_button]" id="export_button" value="%s">',
-			"Iniciar Exportação"
+			"Iniciar Envio"
 		);
 
 		printf(

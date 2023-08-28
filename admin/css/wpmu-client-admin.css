@@ -14,6 +14,8 @@
     border-radius: 4px;
     padding: 7px;
     font-family: monospace;
+    scroll-behavior: smooth;
+    scroll-snap-align: end;
  }
 
  #wp-admin-bar-wpmu-client-gen {

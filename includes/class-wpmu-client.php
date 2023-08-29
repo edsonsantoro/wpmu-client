@@ -196,6 +196,8 @@ class Wpmu_Client
 		 */
 		require_once plugin_dir_path(dirname(__FILE__)) . 'admin/class-wpmu-client-admin-notices.php';
 
+		require_once plugin_dir_path(dirname(__FILE__)) . 'admin/partials/wpmu-client-table.php';
+
 
 		/**
 		 * The class responsible for adding clients as part of the network.
@@ -274,6 +276,12 @@ class Wpmu_Client
 		$this->loader->add_action('admin_init', $blog_admin_page, 'get_export_actions');
 		// Render single site settings page
 		$this->loader->add_action('admin_init', $blog_admin_page, 'wpmu_client_page_init');
+		// Render single site redirections page
+		$this->loader->add_action('admin_init', $blog_admin_page, 'wpmu_client_redirects_page_init');
+
+		$this->loader->add_action('wp_ajax_get_internal_permalink', $blog_admin_page, 'get_internal_permalink');
+		$this->loader->add_action('admin_init', $blog_admin_page, 'save_redirects', 99);
+	
 		
 
 

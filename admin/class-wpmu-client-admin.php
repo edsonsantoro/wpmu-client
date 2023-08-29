@@ -271,12 +271,13 @@ class Admin_Functions
 		}
 
 		$export_path = get_option($this->blog_settings_slug . '_export_path') . '/logs/transfer-';
-		$export_path = substr($export_path, 4);
+		$export_rel_path = "/" . str_replace( get_home_path(), '', $export_path );
 		wp_register_script($this->plugin_name, plugin_dir_url(__FILE__) . 'js/wpmu-client-admin.js', array('jquery'), $this->version, false);
 		wp_enqueue_script($this->plugin_name, plugin_dir_url(__FILE__) . 'js/wpmu-client-admin.js', array('jquery'), $this->version, false);
 		wp_localize_script($this->plugin_name, 'server_ref', [
 			'blog_id' => get_current_blog_id(),
 			'export_path' => $export_path,
+			'export_root' => $export_rel_path,
 			'reference' => $reference,
 			'timestamp' => $timestamp
 		]);
@@ -333,8 +334,10 @@ class Admin_Functions
 			 * timestamp and blog id.
 			 */
 			$actions = as_get_scheduled_actions(['hook' => 'wpmu_schedule_export', 'args' => $args, 'order' => 'DESC', 'status' => \ActionScheduler_Store::STATUS_PENDING]);
-			if (!empty($actions)) {
-				wp_send_json_success(['status' => "pending", 'args' => $args]);
+			if (!empty($actions)) {	
+				$async_request_lock_expiration = \ActionScheduler::lock()->get_expiration( 'async-request-runner' );
+				$expiration = $async_request_lock_expiration - time();
+				wp_send_json_success(['status' => "pending", 'args' => $args, 'expiration' => $expiration]);
 				wp_die();
 				return;
 			}
@@ -363,7 +366,9 @@ class Admin_Functions
 			$action = as_get_scheduled_actions(['hook' => 'wpmu_schedule_export', 'order' => 'DESC', 'status' => \ActionScheduler_Store::STATUS_PENDING]);
 			if (isset($action[$schedule_id])) {
 				$args = $action[$schedule_id]->get_args();
-				wp_send_json_success(['status' => "pending", 'args' => $args]);
+				$async_request_lock_expiration = \ActionScheduler::lock()->get_expiration( 'async-request-runner' );
+				$expiration = $async_request_lock_expiration - time();
+				wp_send_json_success(['status' => "pending", 'args' => $args, 'expiration' => $expiration]);
 				wp_die();
 				return;
 			}
@@ -720,8 +725,11 @@ class Admin_Functions
 			$reference = new DateTime($timestamp);
 			$reference = $reference->format('j-M-Y-H\h-i\m-s\s');
 
+
+			$async_request_lock_expiration = \ActionScheduler::lock()->get_expiration( 'async-request-runner' );
+			$expiration = $async_request_lock_expiration - time();
 			$id = as_enqueue_async_action('wpmu_schedule_export', ['blog_id' => $blog_id, 'timestamp' => $timestamp, 'reference' => $reference], true);
-			$result = ['message' => "Processo de envio agendado com id: " . $id . " e referência: " . $reference . ".Aguardando início ...", 'reference' => $reference, 'id' => $id];
+			$result = ['message' => "Processo de envio agendado com id: " . $id . " e referência: " . $reference . ".\nAguardando início em " . $expiration . " segundos.", 'reference' => $reference, 'id' => $id];
 			wp_send_json_success($result, 200);
 		}
 		wp_send_json_success(["message" => "Export já na fila, aguarde..."]);

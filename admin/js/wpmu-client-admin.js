@@ -12,7 +12,7 @@
     const timestamp = "@" + Math.round(now.getTime() / 1000);
     var fname = null;
     const timedFunction = setInterval(fname, 1000);
-    const lastLogFile = server_ref.export_path + server_ref.reference + ".log";
+    const lastLogFile = server_ref.export_root + server_ref.reference + ".log";
 
     // Load the last export log at pageload and set text value
     var lastLog = loadFile(lastLogFile);
@@ -61,7 +61,7 @@
 
     // Get the latest log file and prints to export box
     function readLog() {
-      const logFile = server_ref.export_path + server_ref.reference + '.log';
+      const logFile = server_ref.export_root + server_ref.reference + '.log';
       logContent = loadFile(logFile);
       if (logContent != false) {
         export_box.text(logContent);
@@ -138,8 +138,7 @@
               button.attr('disabled', false);
               button.val('Iniciar Envio');
             } else if (response.data.status == "running") {
-              
-              const logFile = server_ref.export_path + response.data.args.reference + '.log';
+              const logFile = server_ref.export_root + response.data.args.reference + '.log';
               var logContent = loadFile(logFile);
               if (logContent != false) {
                 export_box.text(logContent);
@@ -149,7 +148,9 @@
                 dispath(data, "verify");
               }, 1000);
             } else if (response.data.status == "pending") {
-              setTimeout(() => {
+	      let content = export_box.text();
+              export_box.text(content + "\n" + response.data.expiration + "s");
+	      setTimeout(() => {
                 dispath(data, "verify");
               }, 1000);
             }

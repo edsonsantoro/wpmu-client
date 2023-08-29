@@ -30,3 +30,48 @@
  .form-table {
    max-width: 100vw;
  }
+
+ .long-field {
+  width: 90%;
+ }
+
+ .target_selector {
+  display: block;
+  position: relative;
+  min-width: 200px;
+  max-width: 500px;
+  animation-duration: 200ms;
+  background-color: #ffffff;
+  padding: 5;
+ }
+
+ .target_selector li {
+  border: 1px solid #8c8f94;
+  padding: 10px 20px;
+  margin: 0;
+ }
+
+ .target_selector li:hover {
+  background-color: #dedede;
+  font-weight: 500;
+ }
+
+ th#edit, th#delete {
+  width: 7%;
+ }
+
+ .table-buttons {
+  background-color: var(--e-context-primary-color);
+  color: #fff;
+  padding: 7px 10px;
+  border-radius: 3px;
+ }
+
+ #delete_redirect {
+  background-color: red;
+ }
+
+ .table-buttons:hover {
+  color: #fff;
+  opacity: .9;
+ }

@@ -13,6 +13,11 @@
     var fname = null;
     const timedFunction = setInterval(fname, 1000);
     const lastLogFile = server_ref.export_root + server_ref.reference + ".log";
+    const select_box = jQuery('.target_selector');
+
+    if (select_box.length > 0) {
+      select_box.hide();
+    }
 
     // Load the last export log at pageload and set text value
     var lastLog = loadFile(lastLogFile);
@@ -148,9 +153,9 @@
                 dispath(data, "verify");
               }, 1000);
             } else if (response.data.status == "pending") {
-	      let content = export_box.text();
+              let content = export_box.text();
               export_box.text(content + "\n" + response.data.expiration + "s");
-	      setTimeout(() => {
+              setTimeout(() => {
                 dispath(data, "verify");
               }, 1000);
             }
@@ -190,6 +195,66 @@
       dispath({}, "export");
     });
 
+    jQuery("#target_url").keyup(
+      delay(function (e) {
+        e.preventDefault();
+        let partialTarget = jQuery("#target_url").val();
+        let data = {
+          action: "get_internal_permalink",
+          partial_input: partialTarget
+        };
+
+        jQuery.post(ajaxurl, data, function (response) {
+          if (response.success == false) {
+            select_box.hide();
+            select_box.empty();
+            return;
+          }
+
+          if (Object.keys(response.data).length > 0) {
+
+            select_box.empty();
+
+            const permalinksObject = response.data;
+
+            for (const id in permalinksObject) {
+              const permalink = permalinksObject[id];
+              console.log(`ID: ${id}, Permalink: ${permalink}`);
+              select_box.append(`<li data-value="${id}">${permalink}</li>`);
+            }
+            select_box.fadeIn(200);
+
+            jQuery('.target_selector li').on('click', function() {
+              const dataValue = $(this).text();
+              jQuery('#target_url').val(dataValue);
+              select_box.fadeOut(200);
+            });
+
+          }
+        });
+      }, 500)
+    )
+
+    jQuery(".table-buttons #delete").on('click', function(e){
+      e.preventDefault();
+
+      let key = $(this).data('key');
+      let value = $(this).data('value');
+
+      let deleteDate = {
+        action: 'delete_redirect',
+        key: key,
+        value: value
+      };
+
+      jQuery.post(ajaxurl, deleteDate, function(response){
+        if(response.success == false) {
+          console.log(response);
+        }
+        location.reload();
+      });
+    })
+
     /**
      * Event listener on client field and local export field
      * to check path and names
@@ -227,5 +292,15 @@
         });
       }, 500)
     );
+
+    $(document).on('click', function (event) {
+      const target = $(event.target);
+      const elementToHide = select_box; // Substitua 'seu-elemento' pelo seletor adequado
+
+      if (!target.is(elementToHide) && !elementToHide.has(event.target).length) {
+        elementToHide.hide();
+      }
+    });
+
   });
 })(jQuery);

@@ -3,7 +3,6 @@
 namespace Wpmu_Client;
 
 use DateTime;
-use Wpmu_Client\Notice;
 
 require_once(__DIR__ . '/class-wpmu-client-admin-notices.php');
 
@@ -92,36 +91,6 @@ class Admin_Functions
 	}
 
 	/**
-	 * Method to remove query string from
-	 * all Wordpress scripts
-	 *
-	 * @return void
-	 */
-	public function remove_scripts_query_string()
-	{
-		global $wp_scripts;
-		if (!is_a($wp_scripts, 'WP_Scripts'))
-			return;
-		foreach ($wp_scripts->registered as $handle => $script)
-			$wp_scripts->registered[$handle]->ver = null;
-	}
-
-	/**
-	 * Method to remove query string from
-	 * all Wordpress styles
-	 *
-	 * @return void
-	 */
-	public function remove_styles_query_strings()
-	{
-		global $wp_styles;
-		if (!is_a($wp_styles, 'WP_Styles'))
-			return;
-		foreach ($wp_styles->registered as $handle => $style)
-			$wp_styles->registered[$handle]->ver = null;
-	}
-
-	/**
 	 * Get single blog options
 	 * @param int $blog_id	The blog id
 	 * @return array|false Array of options or false
@@ -129,6 +98,27 @@ class Admin_Functions
 	public function get_single_site_options(int $blog_id)
 	{
 		return get_blog_option($blog_id, $this->blog_settings_slug);
+	}
+
+
+	function tr_remove_query_strings() {
+if(!is_admin()) {
+add_filter(	'script_loader_src', 'tr_remove_query_strings_split', 15);
+		add_filter('style_loader_src', 'tr_remove_query_strings_split', 15);
+	}
+
+	/**
+	* Function to remove query string
+	* from all styles and scripts
+	* This prevents static sites from
+	* loading incorrect files
+	*
+	* @since	1.0.1
+	* @param	string	$src	The file
+	*/
+	public function remove_query_string($src){
+		$out = preg_split("/(&amp;ver|?ver)/", $src);
+		return $out;
 	}
 
 	/**
@@ -160,8 +150,7 @@ class Admin_Functions
 					$updated[$key] = update_blog_option($blog_id, $this->blog_settings_slug . "_" . $key, $data[$key]);
 				}
 
-				if ($key == "client_dir")
-					$updated[$key] = update_blog_option($blog_id, $this->blog_settings_slug . "_" . $key, 1);
+				if ($key == "client_dir") $updated[$key] = update_blog_option($blog_id, $this->blog_settings_slug . "_" . $key, 1);
 			}
 		}
 
@@ -193,13 +182,11 @@ class Admin_Functions
 			$path = $local_path . '/' . $path;
 		}
 
-		if (!path_is_absolute($path))
-			$path = ABSPATH . $path;
+		if (!path_is_absolute($path)) $path = ABSPATH . $path;
 
 		if (is_dir($path)) {
 			exec('ls ' . $path, $out);
-			if (count($out) == 0)
-				$out[0] = "Diretório vazio";
+			if (count($out) == 0) $out[0] = "Diretório vazio";
 			echo "O diretório ou arquivo " . $path . " já existe. O conteúdo é o seguinte: <br>";
 			foreach ($out as $key => $val) {
 				echo $val . "<br>";
@@ -243,214 +230,9 @@ class Admin_Functions
 	 */
 	public function enqueue_scripts()
 	{
-
-		$action = null;
-		$reference = '';
-		if (as_has_scheduled_action('wpmu_schedule_export')) {
-			$next_action = as_get_scheduled_actions(['hook' => 'wpmu_schedule_export', 'order' => 'DESC']);
-			if ($next_action) {
-				$lk = array_keys($next_action, max($next_action))[0];
-				$action = $next_action[$lk];
-				if ($action) {
-					$action_args = $action->get_args();
-					$reference = (isset($action_args['reference'])) ? $action_args['reference'] : '';
-					$timestamp = (isset($action_args['timestamp'])) ? $action_args['timestamp'] : '';
-				}
-			}
-		} else {
-			$past_actions = as_get_scheduled_actions(['hook' => 'wpmu_schedule_export', 'order' => 'DESC']);
-			if ($past_actions) {
-				$lk = array_keys($past_actions, max($past_actions))[0];
-				$action = $past_actions[$lk];
-				if ($action) {
-					$action_args = $action->get_args();
-					$reference = (isset($action_args['reference'])) ? $action_args['reference'] : '';
-					$timestamp = (isset($action_args['timestamp'])) ? $action_args['timestamp'] : '';
-				}
-			}
-		}
-
-		$export_path = get_option($this->blog_settings_slug . '_export_path') . '/logs/transfer-';
-		$export_rel_path = "/" . str_replace( get_home_path(), '', $export_path );
-		wp_register_script($this->plugin_name, plugin_dir_url(__FILE__) . 'js/wpmu-client-admin.js', array('jquery'), $this->version, false);
+		wp_deregister_script('elementor-pro-webpack-runtime');
+		wp_dequeue_script('elementor-pro-webpack-runtime');
 		wp_enqueue_script($this->plugin_name, plugin_dir_url(__FILE__) . 'js/wpmu-client-admin.js', array('jquery'), $this->version, false);
-		wp_localize_script($this->plugin_name, 'server_ref', [
-			'blog_id' => get_current_blog_id(),
-			'export_path' => $export_path,
-			'export_root' => $export_rel_path,
-			'reference' => $reference,
-			'timestamp' => $timestamp
-		]);
-	}
-
-	/**
-	 * Method that responds to javascript with
-	 * the latest log file to read.
-	 *
-	 * @return void
-	 */
-	public function get_new_log()
-	{
-		//$blog_id = absint($_POST['blog_id']);
-		//$reference = sanitize_text_field($_POST['reference']);
-
-		if (true === as_has_scheduled_action('wpmu_schedule_export')) {
-			$actions = as_get_scheduled_actions(['hook' => 'wpmu_scheduled_action', 'status' => \ActionScheduler_Store::STATUS_PENDING]);
-			if ($actions) {
-				$lk = array_keys($actions, max($actions))[0];
-				$action = $actions[$lk];
-				if ($action) {
-					$args = $action->get_args();
-					$reference = (isset($args['reference'])) ? $args['reference'] : '';
-					wp_send_json_success($reference);
-				}
-			}
-		}
-	}
-
-	/**
-	* Function to replace strings on selected files inside chosen directory.
-	*
-	* This function is called after a successful simply-static export
-	* This function scans HTML, CSS and JS files for URLs that was not converted
-	* from static site to destination site URL. Simply Static not always make it
-	* correct, so we need to manually check it again.
-	*
-	* @param string $directory The directory we will work on
-	* @param string $search The string we are searching for
-	* @param string $replace What we will search for
-	* @param array $allowedExtensions Filetypes to work on
-	*
-	*/
-	public function replace_strings(string $directory = '', string $search = '', string $replace = '', array $allowedExtensions = ['html', 'css', 'js'])
-	{
-	$this->blog_settings_slug = "wpmu_client_blog_settings";
-	$allowedExtensions = ['html', 'css', 'js'];
-	if(empty($directory)) {
-        	$directory = get_option($this->blog_settings_slug . '_export_path');
-	        $directory = realpath($directory);
-	}
-	if(empty($search)) $search = network_home_url();
-	$ss_options = '';
-	if(empty($replace)) {
-        	$ss_options = get_option('simply-static', false);
-	        $replace = $ss_options['destination_scheme'] . $ss_options['destination_host'];
-	        $replace = trailingslashit($replace);
-	}
-
-	$reference = current_time( 'j-M-Y-H\h-i\m-s\s' );
-	$log_file = $directory . '/logs/replace-' . $reference . '.log';
-	$replaces = [];
-
-	$iterator = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($directory));
-	$count = 0;
-	foreach ($iterator as $file) {
-        	if ($file->isFile()) {
-                	$filePath = $file->getPathname();
-                	$extension = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
-	                if (in_array($extension, $allowedExtensions)) {
-        	                $content = file_get_contents($filePath);
-                	        $newContent = str_replace($search, $replace, $content);
-	                        if ($content !== $newContent) {
-        	                        $count++;
-					$htmlContent = preg_replace("/\?ver=[^\s&]+/", '', $newContent);
-                	                file_put_contents($filePath, $htmlContent);
-                        	        file_put_contents($log_file, "Substituição feita em " . $filePath );
-	                        }
-        	        }
-	        }
-	}
-	if($count > 0) {
-        	$message = _e($count . " substituições realizadas nos arquivos", $this->plugin_name, "número de substituições feitas");
-	        $datetime = current_time( 'Y-m-d H:i:s' );
-        	$ss_options['archive_status_messages']['replaces'] = ['message' => $message, 'datetime' => $datetime];
-	        update_option('simply-static', $ss_options);
-	}
-	}
-
-	public function check_export_status()
-	{
-		// Try to get POSTED ID, if not, we work with args
-		if (!isset($_POST['schedule_id'])) {
-
-			if (!isset($_POST['blog_id']) || !isset($_POST['timestamp']) || !isset($_POST['reference'])) {
-				error_log("Não recebemos todos os parâmetros para consulta. Função 'check_export_status', class-wpmu-client-admin.php linha " . __LINE__);
-				wp_send_json_error('Não recebemos todos os parâmetros para consulta');
-			}
-
-			$blog_id = absint($_POST['blog_id']);
-			$reference = sanitize_text_field($_POST['reference']);
-			$timestamp = sanitize_text_field($_POST['timestamp']);
-
-			$args = [
-				'blog_id' => $blog_id,
-				'timestamp' => $timestamp,
-				'reference' => $reference
-			];
-
-			/**
-			 * Since we don't have the ID, we need
-			 * to check the action by args reference,
-			 * timestamp and blog id.
-			 */
-			$actions = as_get_scheduled_actions(['hook' => 'wpmu_schedule_export', 'args' => $args, 'order' => 'DESC', 'status' => \ActionScheduler_Store::STATUS_PENDING]);
-			if (!empty($actions)) {	
-				$async_request_lock_expiration = \ActionScheduler::lock()->get_expiration( 'async-request-runner' );
-				$expiration = $async_request_lock_expiration - time();
-				wp_send_json_success(['status' => "pending", 'args' => $args, 'expiration' => $expiration]);
-				wp_die();
-				return;
-			}
-
-			$actions = as_get_scheduled_actions(['hook' => 'wpmu_schedule_export', 'args' => $args, 'order' => 'DESC', 'status' => \ActionScheduler_Store::STATUS_RUNNING]);
-			if (!empty($actions)) {
-				wp_send_json_success(['status' => "running", 'args' => $args]);
-				wp_die();
-				return;
-			}
-
-			$actions = as_get_scheduled_actions(['hook' => 'wpmu_schedule_export', 'args' => $args, 'order' => 'DESC', 'status' => \ActionScheduler_Store::STATUS_COMPLETE]);
-			if (!empty($actions)) {
-				wp_send_json_success(['status' => "finished", 'args' => $args]);
-				wp_die();
-				return;
-			}
-		} else {
-
-			/**
-			 * When working with Schedule id, it is simple.
-			 */
-			$schedule_id = absint($_POST['schedule_id']);
-
-			// Try to get a pending action
-			$action = as_get_scheduled_actions(['hook' => 'wpmu_schedule_export', 'order' => 'DESC', 'status' => \ActionScheduler_Store::STATUS_PENDING]);
-			if (isset($action[$schedule_id])) {
-				$args = $action[$schedule_id]->get_args();
-				$async_request_lock_expiration = \ActionScheduler::lock()->get_expiration( 'async-request-runner' );
-				$expiration = $async_request_lock_expiration - time();
-				wp_send_json_success(['status' => "pending", 'args' => $args, 'expiration' => $expiration]);
-				wp_die();
-				return;
-			}
-
-			// If not pending, maybe it is running
-			$action = as_get_scheduled_actions(['hook' => 'wpmu_schedule_export', 'order' => 'DESC', 'status' => \ActionScheduler_Store::STATUS_RUNNING]);
-			if (isset($action[$schedule_id])) {
-				$args = $action[$schedule_id]->get_args();
-				wp_send_json_success(['status' => "running", 'args' => $args]);
-				wp_die();
-				return;
-			}
-
-			// Or it may be finished already
-			$action = as_get_scheduled_actions(['hook' => 'wpmu_schedule_export', 'order' => 'DESC', 'status' => \ActionScheduler_Store::STATUS_COMPLETE]);
-			if (isset($action[$schedule_id])) {
-				$args = $action[$schedule_id]->get_args();
-				wp_send_json_success(['status' => "finished", 'args' => $args]);
-				wp_die();
-				return;
-			}
-		}
 	}
 
 	/**
@@ -477,32 +259,23 @@ class Admin_Functions
 	 */
 	public function show_client_field()
 	{
-		get_option($this->blog_settings_slug . "_folder_created")
-		?>
+?>
 		<div class="wrap">
-			<h2>
-				<?php echo __("Dados Locais do Clientes", $this->plugin_name); ?>
-			</h2>
-			<p>
-				<?php echo __("Dados do cliente e arquivos locais.", $this->plugin_name); ?>
-			</p>
+			<h2><?php echo __("Dados Locais do Clientes", $this->plugin_name); ?></h2>
+			<p><?php echo __("Dados do cliente e arquivos locais.", $this->plugin_name);  ?></p>
 		</div>
 		<table class="form-table" role="presentation">
 			<tr class="form-field form-required">
-				<th scope="row"><label for="client">
-						<?php echo __('Cliente ', $this->plugin_name); ?>
-					</label><span class="required">*</span></th>
+				<th scope="row"><label for="client"><?php echo __('Cliente ', $this->plugin_name); ?></label><span class="required">*</span></th>
 				<td>
-					<input class="wpmu-client" name="blog[client]" type="text" id="client" required autocomplete="on"
-						value="" />
-					<p>
-						<?php echo __("Digite o nome do cliente para quem produzirá este novo site. <br><b>ATENÇÃO:</b> Verifique bem o nome, pois o mesmo será usado apra criar diretórios para exportação do código-fonte.", $this->plugin_name); ?>
+					<input class="wpmu-client" name="blog[client]" type="text" id="client" required autocomplete="on" value="" />
+					<p><?php echo __("Digite o nome do cliente para quem produzirá este novo site. <br><b>ATENÇÃO:</b> Verifique bem o nome, pois o mesmo será usado apra criar diretórios para exportação do código-fonte.", $this->plugin_name);  ?>
 					</p>
 					<pre id='return'></pre>
 				</td>
 			</tr>
 		</table>
-		<?php
+	<?php
 	}
 
 	/**
@@ -511,64 +284,40 @@ class Admin_Functions
 	public function show_ftp_credentials_fields()
 	{
 
-		?>
+	?>
 		<div class="wrap">
-			<h2>
-				<?php echo __('Credenciais FTP', $this->plugin_name); ?>
-			</h2>
-			<p>
-				<?php echo __('Podem ser definidos depois. Estes dados serão usados para definir as configurações de exportação do site do cliente para seu próprio servidor.', $this->plugin_name); ?>
-			</p>
+			<h2><?php echo __('Credenciais FTP', $this->plugin_name); ?></h2>
+			<p><?php echo __('Podem ser definidos depois. Estes dados serão usados para definir as configurações de exportação do site do cliente para seu próprio servidor.', $this->plugin_name); ?></p>
 		</div>
 		<table class="form-table" role="presentation">
 			<tr class="form-field form-required">
-				<th scope="row"><label for="ftp_host">
-						<?php echo __('Endereço FTP', $this->plugin_name); ?>
-					</label></th>
-				<td><input class="wpmu-client" name="blog[ftp_host]" type="text" id="ftp_host" placeholder="drbmarketing.com.br"
-						value="" />
-					<p>
-						<?php echo __('Endereço do servidor FTP.', $this->plugin_name); ?>
-					</p>
+				<th scope="row"><label for="ftp_host"><?php echo __('Endereço FTP', $this->plugin_name); ?></label></th>
+				<td><input class="wpmu-client" name="blog[ftp_host]" type="text" id="ftp_host" placeholder="drbmarketing.com.br" value="" />
+					<p><?php echo __('Endereço do servidor FTP.', $this->plugin_name); ?></p>
 				</td>
 			</tr>
 			<tr class="form-field form-required">
-				<th scope="row"><label for="ftp_user">
-						<?php echo __('Usuário FTP', $this->plugin_name); ?>
-					</label></th>
-				<td><input class="wpmu-client" name="blog[ftp_user]" type="text" id="ftp_user" placeholder="user" value="" />
-				</td>
+				<th scope="row"><label for="ftp_user"><?php echo __('Usuário FTP', $this->plugin_name); ?></label></th>
+				<td><input class="wpmu-client" name="blog[ftp_user]" type="text" id="ftp_user" placeholder="user" value="" /></td>
 			</tr>
 			<tr class="form-field form-required">
-				<th scope="row"><label for="ftp_pass">
-						<?php echo __('Senha FTP', $this->plugin_name); ?>
-					</label></th>
-				<td><input class="wpmu-client" name="blog[ftp_pass]" type="password" id="ftp_pass" placeholder="******"
-						value="" /></td>
+				<th scope="row"><label for="ftp_pass"><?php echo __('Senha FTP', $this->plugin_name); ?></label></th>
+				<td><input class="wpmu-client" name="blog[ftp_pass]" type="password" id="ftp_pass" placeholder="******" value="" /></td>
 			</tr>
 			<tr class="form-field form-required">
-				<th scope="row"><label for="ftp_port">
-						<?php echo __('Porta FTP', $this->plugin_name); ?>
-					</label></th>
+				<th scope="row"><label for="ftp_port"><?php echo __('Porta FTP', $this->plugin_name); ?></label></th>
 				<td><input class="wpmu-client" name="blog[ftp_port]" type="number" id="ftp_port" placeholder="21" value="" />
-					<p>
-						<?php echo __('Geralmente porta 21.', $this->plugin_name); ?>
-					</p>
+					<p><?php echo __('Geralmente porta 21.', $this->plugin_name); ?></p>
 				</td>
 			</tr>
 			<tr class="form-field form-required">
-				<th scope="row"><label for="ftp_path">
-						<?php echo __('Caminho FTP', $this->plugin_name); ?>
-					</label></th>
-				<td><input class="wpmu-client" name="blog[ftp_path]" type="text" id="ftp_path" placeholder="./caminho"
-						value="" />
-					<p>
-						<?php echo __('Pasta remota onde será sincronizado os arquivos do site estático WordPress.', $this->plugin_name); ?>
-					</p>
+				<th scope="row"><label for="ftp_path"><?php echo __('Caminho FTP', $this->plugin_name); ?></label></th>
+				<td><input class="wpmu-client" name="blog[ftp_path]" type="text" id="ftp_path" placeholder="./caminho" value="" />
+					<p><?php echo __('Pasta remota onde será sincronizado os arquivos do site estático WordPress.', $this->plugin_name); ?></p>
 				</td>
 			</tr>
 		</table>
-		<?php
+<?php
 	}
 
 	/**
@@ -583,15 +332,14 @@ class Admin_Functions
 		$created = get_blog_option($blog_id, $this->blog_settings_slug . "_folder_created", false);
 
 		//This blog ID has a folder already, skipping creation
-		if ($created)
-			return;
+		if ($created) return;
 
 		// Folder was not created, continue and get client name for folder
 		$client = get_blog_option($blog_id, $this->blog_settings_slug . "_client", "");
 
-		// We don't have a client name for this project, so abort execution
+		// If no client name was defined (for existing blogs) get blog id
 		if (empty($client)) {
-			return;
+			$client = 'blog-' . $blog_id;
 		}
 
 		// Sanitize the client name to avoid bad folder names
@@ -633,8 +381,7 @@ class Admin_Functions
 		$client_dir_exists = $this->check_dir_exists($path . '/' . $client);
 
 		//If no client folder, create it
-		if (!$client_dir_exists)
-			$client_dir_exists = $this->create_directory($path . '/' . $client);
+		if (!$client_dir_exists) $client_dir_exists = $this->create_directory($path . '/' . $client);
 
 		// If client folder exists, check if project folder exists and create it, if needed
 		$updated = false;
@@ -667,18 +414,14 @@ class Admin_Functions
 
 		// Now, save the full export path
 		$new_export_path = update_blog_option($blog_id, $this->blog_settings_slug . "_export_path", $path . '/' . $client . '/' . $blogname);
-		if ($new_export_path != false)
-			get_blog_option($blog_id, $this->blog_settings_slug . "_export_path", false);
-		if ($new_export_path)
-			$this->set_ss_options($blog_id, 0, "switch");
+		if ($new_export_path != false) get_blog_option($blog_id, $this->blog_settings_slug . "_export_path", false);
+		if ($new_export_path) $this->set_ss_options($blog_id, 0, "switch");
 
 		return true;
 	}
 
 	/**
-	 *  Set Simply Static options to our defaults when changing blogs
-	 *  if this was selected on settings page
-	 * 
+	 *  Always set Simply Static options to our defaults when changing blogs
 	 * @param int $new_blog_id 		New blog ID.
 	 * @param int $prev_blog_id		Previous blog ID.
 	 * @param string $context		Additional context. Accepts 'switch' when called from switch_to_blog() or 'restore' when called from restore_current_blog() .
@@ -687,12 +430,10 @@ class Admin_Functions
 	{
 		// Check if we can overwrite this blog's simply static options
 		$overwrite = get_blog_option($new_blog_id, $this->blog_settings_slug . "_ss_overwrite");
-		if ($overwrite == '' || $overwrite == false)
-			return;
+		if ($overwrite == '' || $overwrite == false) return;
 
 		// Working only when switching blogs
-		if ($context == "restore")
-			return;
+		if ($context == "restore") return;
 
 		// Get export path
 		$path = get_blog_option($new_blog_id, $this->blog_settings_slug . "_export_path", "");
@@ -701,9 +442,9 @@ class Admin_Functions
 
 		$urls_to_exclude = $options['urls_to_exclude'];
 		$exclude_feed = array(
-			site_url() . DIRECTORY_SEPARATOR . 'feed' => array(
-				'url' => site_url() . DIRECTORY_SEPARATOR . 'feed',
-				'do_not_save' => '1',
+			site_url() . DIRECTORY_SEPARATOR . 'feed'      => array(
+				'url'           => site_url() . DIRECTORY_SEPARATOR . 'feed',
+				'do_not_save'   => '1',
 				'do_not_follow' => '1',
 			)
 		);
@@ -727,39 +468,39 @@ class Admin_Functions
 	public function wpmu_client_cpt()
 	{
 		$args = [
-			'label' => esc_html__('Clientes', 'text-domain'),
+			'label'  => esc_html__('Clientes', 'text-domain'),
 			'labels' => [
-				'menu_name' => esc_html__('Clientes', $this->plugin_name),
-				'name_admin_bar' => esc_html__('Cliente', $this->plugin_name),
-				'add_new' => esc_html__('Add Cliente', $this->plugin_name),
-				'add_new_item' => esc_html__('Add new Cliente', $this->plugin_name),
-				'new_item' => esc_html__('New Cliente', $this->plugin_name),
-				'edit_item' => esc_html__('Edit Cliente', $this->plugin_name),
-				'view_item' => esc_html__('View Cliente', $this->plugin_name),
-				'update_item' => esc_html__('View Cliente', $this->plugin_name),
-				'all_items' => esc_html__('All Clientes', $this->plugin_name),
-				'search_items' => esc_html__('Search Clientes', $this->plugin_name),
-				'parent_item_colon' => esc_html__('Parent Cliente', $this->plugin_name),
-				'not_found' => esc_html__('No Clientes found', $this->plugin_name),
+				'menu_name'          => esc_html__('Clientes', $this->plugin_name),
+				'name_admin_bar'     => esc_html__('Cliente', $this->plugin_name),
+				'add_new'            => esc_html__('Add Cliente', $this->plugin_name),
+				'add_new_item'       => esc_html__('Add new Cliente', $this->plugin_name),
+				'new_item'           => esc_html__('New Cliente', $this->plugin_name),
+				'edit_item'          => esc_html__('Edit Cliente', $this->plugin_name),
+				'view_item'          => esc_html__('View Cliente', $this->plugin_name),
+				'update_item'        => esc_html__('View Cliente', $this->plugin_name),
+				'all_items'          => esc_html__('All Clientes', $this->plugin_name),
+				'search_items'       => esc_html__('Search Clientes', $this->plugin_name),
+				'parent_item_colon'  => esc_html__('Parent Cliente', $this->plugin_name),
+				'not_found'          => esc_html__('No Clientes found', $this->plugin_name),
 				'not_found_in_trash' => esc_html__('No Clientes found in Trash', $this->plugin_name),
-				'name' => esc_html__('Clientes', $this->plugin_name),
-				'singular_name' => esc_html__('Cliente', $this->plugin_name),
+				'name'               => esc_html__('Clientes', $this->plugin_name),
+				'singular_name'      => esc_html__('Cliente', $this->plugin_name),
 			],
-			'public' => false,
+			'public'              => false,
 			'exclude_from_search' => false,
-			'publicly_queryable' => false,
-			'show_ui' => true,
-			'show_in_nav_menus' => true,
-			'show_in_admin_bar' => true,
-			'show_in_rest' => false,
-			'capability_type' => 'post',
-			'hierarchical' => false,
-			'has_archive' => true,
-			'query_var' => false,
-			'can_export' => true,
-			'rewrite_no_front' => false,
-			'show_in_menu' => true,
-			'menu_icon' => 'dashicons-businessman',
+			'publicly_queryable'  => false,
+			'show_ui'             => true,
+			'show_in_nav_menus'   => true,
+			'show_in_admin_bar'   => true,
+			'show_in_rest'        => false,
+			'capability_type'     => 'post',
+			'hierarchical'        => false,
+			'has_archive'         => true,
+			'query_var'           => false,
+			'can_export'          => true,
+			'rewrite_no_front'    => false,
+			'show_in_menu'        => true,
+			'menu_icon'           => 'dashicons-businessman',
 			'supports' => [
 				'title',
 				'author',
@@ -785,14 +526,12 @@ class Admin_Functions
 			$reference = new DateTime($timestamp);
 			$reference = $reference->format('j-M-Y-H\h-i\m-s\s');
 
-
-			$async_request_lock_expiration = \ActionScheduler::lock()->get_expiration( 'async-request-runner' );
-			$expiration = $async_request_lock_expiration - time();
-			$id = as_enqueue_async_action('wpmu_schedule_export', ['blog_id' => $blog_id, 'timestamp' => $timestamp, 'reference' => $reference], true);
-			$result = ['message' => "Processo de envio agendado com id: " . $id . " e referência: " . $reference . ".\nAguardando início em " . $expiration . " segundos.", 'reference' => $reference, 'id' => $id];
+			$id = as_enqueue_async_action('wpmu_schedule_export', ['blog_id' => $blog_id, 'timestamp' => $timestamp], true);
+			$result = ['result' => "Processo iniciado com id: " . $id . ". Iniciando ...", 'reference' => $reference];
 			wp_send_json_success($result, 200);
 		}
-		wp_send_json_success(["message" => "Export já na fila, aguarde..."]);
+		wp_send_json_error(["result" => "Export já na fila"]);
+		wp_die();
 	}
 
 	/**
@@ -817,14 +556,14 @@ class Admin_Functions
 		$blog_settings_slug = $this->blog_settings_slug;
 
 		// Get ftp credentials, client name, and export path
-		$client = get_blog_option($blog_id, $blog_settings_slug . "_client", false);
-		$ftp_host = get_blog_option($blog_id, $blog_settings_slug . "_ftp_host", false);
-		$ftp_user = get_blog_option($blog_id, $blog_settings_slug . "_ftp_user", "anonymous");
-		$ftp_pass = (false != get_blog_option($blog_id, $blog_settings_slug . "_ftp_pass")) ? ',"' . get_blog_option($blog_id, $blog_settings_slug . "_ftp_pass") . '" ' : ' '; // Do not remove whitespaces
-		$ftp_port = (false != get_blog_option($blog_id, $blog_settings_slug . "_ftp_port")) ? '-p ' . get_blog_option($blog_id, $blog_settings_slug . "_ftp_port") . ' ' : '-p 21 '; // Do not remove whitespaces
-		$ftp_path = (false != get_blog_option($blog_id, $blog_settings_slug . "_ftp_path")) ? get_blog_option($blog_id, $blog_settings_slug . "_ftp_path") : './';
-		$ftp_sync_new_only = (false != get_blog_option($blog_id, $blog_settings_slug . "_ftp_sync_new_only")) ? "-n " : "";
-		$export_path = get_blog_option($blog_id, $blog_settings_slug . "_export_path", false);
+		$client				= get_blog_option($blog_id, $blog_settings_slug . "_client", false);
+		$ftp_host 			= get_blog_option($blog_id, $blog_settings_slug . "_ftp_host", false);
+		$ftp_user			= get_blog_option($blog_id, $blog_settings_slug . "_ftp_user", "anonymous");
+		$ftp_pass	 		= (false != get_blog_option($blog_id, $blog_settings_slug . "_ftp_pass")) ? ',"' . get_blog_option($blog_id, $blog_settings_slug . "_ftp_pass") . '" ' : ' '; // Do not remove whitespaces
+		$ftp_port 			= (false != get_blog_option($blog_id, $blog_settings_slug . "_ftp_port")) ? '-p ' . get_blog_option($blog_id, $blog_settings_slug . "_ftp_port") . ' ' : '-p 21 '; // Do not remove whitespaces
+		$ftp_path			= (false != get_blog_option($blog_id, $blog_settings_slug . "_ftp_path")) ? get_blog_option($blog_id, $blog_settings_slug . "_ftp_path") : './';
+		$ftp_sync_new_only  = (false != get_blog_option($blog_id, $blog_settings_slug . "_ftp_sync_new_only")) ? "-n " : "";
+		$export_path		= get_blog_option($blog_id, $blog_settings_slug . "_export_path", false);
 
 		// If no FTP credentials, abort
 		if (!$ftp_host) {
@@ -853,10 +592,10 @@ class Admin_Functions
 			return false;
 		}
 
-		/**
-		 *  The command. Note that we depend of LFTP command to sync folder.
-		 *  If command is not available, we need to stop
-		 */
+		/* The command. Note that we depend of LFTP command to sync folder.
+		*  If command is not available, we need to stop
+		*/
+
 		$lftp = $this->command_exists("lftp");
 
 		if (!$lftp) {
@@ -867,26 +606,20 @@ class Admin_Functions
 			return false;
 		}
 
-		// Get export path to create our logs
-		$export_path = get_blog_option($blog_id, $this->blog_settings_slug . "_export_path");
+//		$export_path = '/var/www/gen.drb.marketing/wp-content/plugins/wpmu-client/exports';
+//		$log_path = "/var/www/gen.drb.marketing/wp-content/plugins/wpmu-client/exports/logs/transfer-" . $reference;
 
-		if (!is_dir($export_path . '/logs')) {
-			exec('mkdir -p ' . $export_path . '/logs');
-		}
-
-		if (!is_writable($export_path . '/logs')) {
-			error_log('nao posso gravar');
-		}
-
-		$log_path = $export_path . '/logs/transfer-' . $reference . '.log';
-		$xfer_log_path = $export_path . '/logs/transfer-xfer-' . $reference . '.log';
+		$ss_options = get_option('simply-static');
+		$temp_files = $ss_options['temp_files_dir'];
+		$log_path = $temp_files . 'logs/transfer-' . $reference;
 
 		// Lets build the command argument
-		$cmd = 'lftp -u "' . $ftp_user . '"' . $ftp_pass . $ftp_port . $ftp_host . ' -e "set ftp:ssl-allow no;set log:enabled yes;set log:show-time yes;set log:file ' . $xfer_log_path . ';mirror --exclude=logs/ --transfer-all -P 5 -v ' . $ftp_sync_new_only . '-R ' . $export_path . '/ ' . $ftp_path . ';exit;" > ' . $log_path;
+		$cmd = 'lftp -u "' . $ftp_user . '"' . $ftp_pass . $ftp_port . $ftp_host . ' -e "set ftp:ssl-allow no;set log:file/xfer "' . $temp_files . 'logs/transfer-log-' . $reference . '";mirror -c ' . $ftp_sync_new_only . ' -R ' . $export_path  . '/ ' . $ftp_path . ';exit;" > /var/www/gen.drb.marketing/log.log';
 
 		exec($cmd);
-		return true;
-
+//		$result = $this->execute_command($cmd, $temp_files, $log_path);
+		// This is required to terminate immediately and return a proper response
+		wp_die();
 	}
 
 	public function read_export_log($blog_id = '', $timestamp = '')
@@ -896,38 +629,31 @@ class Admin_Functions
 			$reference = $_POST['exportRef'];
 		}
 
-		$export_path = get_blog_option($blog_id, $this->blog_settings_slug . "_export_path");
-		$log_path = $export_path . '/logs/transfer-' . $reference . '.log';
+		$export_path = get_blog_option($blog_id, 'simply-static')['temp_files_dir'];
+//		$export_path = get_blog_option($blog_id, $this->blog_settings_slug . "_export_path");
 
-		if (!$log_path) {
+		if (!$export_path) {
 			$message = __("Não foi possível encontrar o site ou o caminho de exportação.", $this->plugin_name);
 			error_log($message);
 			wp_send_json_error($message);
 			wp_die();
 		}
 
-		if (!file_exists($log_path)) {
-			wp_send_json_error("Arquivo de log não encontrado.");
+		if(!file_exists($export_path . 'logs/transfer-' . $reference)) {
 			wp_die();
 		}
 
-		$log = fopen($log_path, 'r');
-		//		wp_send_json_success($log);
+
+		$log = fopen($export_path . "logs/transfer-" . $reference, 'r');
 
 		if ($log) {
 			while (!feof($log)) {
-				$line[] = fgets($log);
+				$line = fgets($log);
+				wp_send_json_success($line);
 			}
 			fclose($log);
 		}
 
-		//wp_send_json_success($line);
-
-		if (in_array('Closing control socket', $line)) {
-			wp_send_json_success(['message' => $line, 'stop' => true]);
-		} else {
-			wp_send_json_success(['message' => $line, 'stop' => false]);
-		}
 		wp_die();
 	}
 
@@ -989,10 +715,33 @@ class Admin_Functions
 	private function execute_command($cmd, $export_path, $log_path)
 	{
 
+		while (@ob_end_flush()); // end all output buffers if any
+
 		$out = null;
 
 		exec($cmd . " > " . $log_path, $out);
 
+		$proc = popen("$cmd 2>&1 ; echo Exit status : $?", 'r');
+
+		$complete_output = "";
+		$live_output = "";
+
+		while (!feof($proc)) {
+			$live_output     = fread($proc, 4096);
+			$complete_output = $complete_output . $live_output;
+			@flush();
+		}
+
+		pclose($proc);
+
+		// get exit status
+		preg_match('/[0-9]+$/', $complete_output, $matches);
+
+		// return exit status and intended output
+		return array(
+			'exit_status'  => intval($matches[0]),
+			'output'       => str_replace("Exit status : " . $matches[0], '', $complete_output)
+		);
 	}
 
 	/**
@@ -1007,18 +756,17 @@ class Admin_Functions
 	{
 
 		if (!$path) {
-			$message = __("Caminho não definido.", $this->plugin_name);
+			$message = _("Caminho não definido.", $this->plugin_name);
 			error_log($message);
 			new Notice($message, 'error', true);
 			wp_mail(wp_get_current_user()->data->user_email, "WPMU-Client", $message);
-			return false;
+			return;
 		}
 
 		$output = null;
 
 		// Creat it only if folder does not exists yet.
-		if (!is_dir($path))
-			exec('mkdir -p -v ' . $path, $output);
+		if (!is_dir($path)) exec('mkdir -p -v ' . $path, $output);
 
 		if (is_array($output) && !empty($output[0]) && strstr($output[0], 'created directory')) {
 			return true;
@@ -1087,16 +835,15 @@ class Admin_Functions
 	public function add_admin_button(\WP_Admin_Bar $wp_admin_bar)
 	{
 
-		if (is_network_admin())
-			return $wp_admin_bar;
+		if (is_network_admin()) return $wp_admin_bar;
 
 		$site = get_blog_details();
 
 		$args = [
-			'id' => 'wpmu-client-gen',
-			'title' => 'Enviar ' . $site->blogname . ' para Remoto',
-			'href' => $site->siteurl . '/wp-admin/options-general.php?page=wpmu-client-config',
-			'meta' => ['class', 'wpmu-button-class'],
+			'id' 		=> 'wpmu-client-gen',
+			'title'		=> 'Enviar ' . $site->blogname . ' para Remoto',
+			'href'		=> $site->siteurl . '/wp-admin/options-general.php?page=wpmu-client-config',
+			'meta'		=> ['class', 'wpmu-button-class'],
 		];
 
 		$wp_admin_bar->add_node($args);

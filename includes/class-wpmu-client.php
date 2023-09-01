@@ -148,11 +148,11 @@ class Wpmu_Client
 
 		// Set defaults
 		$this->can_run = true;
-		
+
 		/**
 		 * The class that will handle scheduled actions
 		 */
-		require_once( plugin_dir_path(dirname(__FILE__)) . 'libraries/action-scheduler/action-scheduler.php' );
+		require_once(plugin_dir_path(dirname(__FILE__)) . 'libraries/action-scheduler/action-scheduler.php');
 		/**
 		 * The class responsible for orchestrating the actions and filters of the
 		 * core plugin.
@@ -243,10 +243,10 @@ class Wpmu_Client
 		$blog_settings_slug = $this->get_blog_settings_slug();
 		$plugin_name = $this->get_plugin_name();
 
-		$plugin_admin 		= new Admin_Functions($plugin_name, $version, $network_settings_slug, $blog_settings_slug);
-		$blog_admin_page 	= new Admin_Settings_Page($plugin_name, $network_settings_slug, $blog_settings_slug);
+		$plugin_admin = new Admin_Functions($plugin_name, $version, $network_settings_slug, $blog_settings_slug);
+		$blog_admin_page = new Admin_Settings_Page($plugin_name, $network_settings_slug, $blog_settings_slug);
 		$network_admin_page = new Network_Settings_Page($plugin_name, $version, $network_settings_slug, $blog_settings_slug);
-		$network_tab_page	= new Network_Tab_Page($plugin_name, $version, $network_settings_slug, $blog_settings_slug);
+		$network_tab_page = new Network_Tab_Page($plugin_name, $version, $network_settings_slug, $blog_settings_slug);
 
 
 		// ---------------- Network Settings Page actions and filters ----------------
@@ -255,14 +255,14 @@ class Wpmu_Client
 		// Add fields and sections to the page
 		$this->loader->add_action('admin_init', $network_admin_page, 'init_network_page');
 		// Save our custom fields from the GEN tab on edit site screen
-		$this->loader->add_action('network_admin_edit_site_update', $network_admin_page,  'update_network_settings', 50);
+		$this->loader->add_action('network_admin_edit_site_update', $network_admin_page, 'update_network_settings', 50);
 
 
 		// ---------------- Network Site Edit Tab Tab actions and filters ----------------
 		// Add a GEN tab to site info screen
 		$this->loader->add_filter('network_edit_site_nav_links', $network_tab_page, 'add_network_site_tab');
 		// Save our custom fields from the GEN tab on edit site screen
-		$this->loader->add_action('network_admin_edit_gen_update', $network_tab_page,  'save_network_settings', 50);
+		$this->loader->add_action('network_admin_edit_gen_update', $network_tab_page, 'save_network_settings', 50);
 		// Add our custom page to the tab
 		$this->loader->add_action('network_admin_menu', $network_tab_page, 'add_network_tab_page');
 		// Render single site settings page
@@ -281,8 +281,8 @@ class Wpmu_Client
 
 		$this->loader->add_action('wp_ajax_get_internal_permalink', $blog_admin_page, 'get_internal_permalink');
 		$this->loader->add_action('admin_init', $blog_admin_page, 'save_redirects', 99);
-	
-		
+
+
 
 
 		// ---------------- General Admin Functions actions and filters ----------------
@@ -319,6 +319,7 @@ class Wpmu_Client
 		$this->loader->add_action('wp_print_styles', $plugin_admin, 'remove_styles_query_strings', 999);
 		// Ajax function that checks the export status to client ftp
 		$this->loader->add_action('wp_ajax_check_export_status', $plugin_admin, 'check_export_status');
+		$this->loader->add_action('ss_completed', $plugin_admin, 'replace_strings', 10, 5);
 	}
 
 	/**
@@ -437,20 +438,21 @@ class Wpmu_Client
 	 */
 	public function check_upgrade()
 	{
-		$old_opts = get_site_option("wpmu_client_network_config");		
+		$old_opts = get_site_option("wpmu_client_network_config");
 		$opts = get_site_option($this->get_network_settings_slug());
 		$act_version = (isset($opts['version'])) ? $opts['version'] : "";
 		$version = $this->get_version();
 
 		// Version is not defined, but we are using new slug.
 		// So we need to include version option to this new slug
-		if($old_opts == false && $act_version == "") {
+		if ($old_opts == false && $act_version == "") {
 			$opts['version'] = $this->get_version();
 			$this->upgrade_network_options();
 		}
 
 		// Versions match, abort
-		if ($act_version == $version) return;
+		if ($act_version == $version)
+			return;
 
 		$sites = get_sites();
 
@@ -478,7 +480,7 @@ class Wpmu_Client
 		if ($old_options == false) {
 			$opts = get_site_option($this->get_network_settings_slug());
 			// We have new options, but not the version, upgrade it
-			if(!isset($opts['version'])) {
+			if (!isset($opts['version'])) {
 				$opts['version'] = $this->get_version();
 				update_site_option($this->get_network_settings_slug(), $opts);
 			}
@@ -542,9 +544,9 @@ class Wpmu_Client
 				}
 
 				// Delete other option slugs
-				if($key == 'folder_created' || $key == 'export_path') {
+				if ($key == 'folder_created' || $key == 'export_path') {
 					delete_blog_option($blog_id, "wpmu_export_path");
-					delete_blog_option($blog_id, "wpmu_folder_created");					
+					delete_blog_option($blog_id, "wpmu_folder_created");
 				}
 			}
 		}

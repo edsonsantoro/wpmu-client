@@ -216,7 +216,6 @@ class Admin_Functions
 		}
 	}
 
-
 	/**
 	 * Save our custom fields data when site is initialized
 	 * @param WP_Site $new_site The new site object
@@ -225,7 +224,7 @@ class Admin_Functions
 	public function save_new_blog_options(WP_Site $new_site, array $args = [])
 	{
 		$id = absint($new_site->blog_id);
-		$posted = $_POST['blog'];
+		$posted = absint($_POST['blog']);
 
 		// Setup client and or project folders for exporting static sites
 		$setup = $this->setup_folder($id);
@@ -329,35 +328,42 @@ class Admin_Functions
 	 * @param array  $allowedExtensions Filetypes to work on
 	 *
 	 */
-	public function replace_strings(string $directory = '', string $search = '', string $replace = '', array $allowedExtensions = ['html', 'css', 'js'])
+	public function replace_strings(string $status, string $directory = '', string $search = '', string $replace = '', array $allowedExtensions = ['html', 'css', 'js'])
 	{
-		$this->blog_settings_slug = "wpmu_client_blog_settings";
-		$allowedExtensions = ['html', 'css', 'js'];
+		error_log($status);
+		if($status != "success") {
+			return;
+		}
+
 		if (empty($directory)) {
 			$directory = get_option($this->blog_settings_slug . '_export_path');
 			$directory = realpath($directory);
+			if(!$this->check_dir_exists($directory)) $this->create_directory($directory);
 		}
 		if (empty($search))
 			$search = network_home_url();
 
 		$ss_options = get_option('simply-static', false);
 		if (empty($replace)) {
-			$replace = $ss_options['destination_scheme'] . $ss_options['destination_host'];
+			$scheme = (isset($ss_options['destination_scheme'])) ? $ss_options['destination_scheme'] : "https://";
+			$replace = $scheme . $ss_options['destination_host'];
 			$replace = trailingslashit($replace);
 		}
 
 		$reference = current_time('j-M-Y-H\h-i\m-s\s');
 
 		$log_folder = $directory . "/logs";
-		if ($this->check_dir_exists($log_folder))
+
+		if ($this->check_dir_exists($log_folder)){
 			$this->create_directory($log_folder);
+		}
 
 		$log_file = $directory . '/logs/replace-' . $reference . '.log';
 
 		if (!file_exists($log_file)) {
-			file_put_contents($log_file, '');
+			exec('touch ' . $log_file);
 		}
-
+		
 		$iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($directory));
 		$count = 0;
 		foreach ($iterator as $file) {
@@ -385,6 +391,7 @@ class Admin_Functions
 			if (!$updated)
 				error_log("Não pude atualizar as mensages de status do simply-static");
 		}
+
 	}
 
 	public function check_export_status()
@@ -890,8 +897,8 @@ class Admin_Functions
 		// Get export path to create our logs
 		$export_path = get_blog_option($blog_id, $this->blog_settings_slug . "_export_path");
 
-		if (!is_dir($export_path . '/logs')) {
-			exec('mkdir -p ' . $export_path . '/logs');
+		if (!$this->check_dir_exists($export_path . '/logs')) {
+			$this->create_directory($export_path . '/logs');
 		}
 
 		if (!is_writable($export_path . '/logs')) {

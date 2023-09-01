@@ -270,7 +270,7 @@ class Admin_Settings_Page
 
 	public function wpmu_client_section_info($args)
 	{
-		if (!empty($args)) {
+		if (!empty($args['description'])) {
 			printf(
 				'<p>%s</p>',
 				$args['description']

@@ -2,7 +2,14 @@
 
 namespace Wpmu_Client;
 
+use ActionScheduler;
+use ActionScheduler_Store;
 use DateTime;
+use RecursiveDirectoryIterator;
+use RecursiveIteratorIterator;
+use WP_Admin_Bar;
+use WP_Error;
+use WP_Site;
 use Wpmu_Client\Notice;
 
 require_once(__DIR__ . '/class-wpmu-client-admin-notices.php');
@@ -215,7 +222,7 @@ class Admin_Functions
 	 * @param WP_Site $new_site The new site object
 	 * @param array $args Arguments for the initialization
 	 */
-	public function save_new_blog_options(\WP_Site $new_site, array $args = [])
+	public function save_new_blog_options(WP_Site $new_site, array $args = [])
 	{
 		$id = absint($new_site->blog_id);
 		$posted = $_POST['blog'];
@@ -271,7 +278,7 @@ class Admin_Functions
 		}
 
 		$export_path = get_option($this->blog_settings_slug . '_export_path') . '/logs/transfer-';
-		$export_rel_path = "/" . str_replace( get_home_path(), '', $export_path );
+		$export_rel_path = "/" . str_replace(get_home_path(), '', $export_path);
 		wp_register_script($this->plugin_name, plugin_dir_url(__FILE__) . 'js/wpmu-client-admin.js', array('jquery'), $this->version, false);
 		wp_enqueue_script($this->plugin_name, plugin_dir_url(__FILE__) . 'js/wpmu-client-admin.js', array('jquery'), $this->version, false);
 		wp_localize_script($this->plugin_name, 'server_ref', [
@@ -295,7 +302,7 @@ class Admin_Functions
 		//$reference = sanitize_text_field($_POST['reference']);
 
 		if (true === as_has_scheduled_action('wpmu_schedule_export')) {
-			$actions = as_get_scheduled_actions(['hook' => 'wpmu_scheduled_action', 'status' => \ActionScheduler_Store::STATUS_PENDING]);
+			$actions = as_get_scheduled_actions(['hook' => 'wpmu_scheduled_action', 'status' => ActionScheduler_Store::STATUS_PENDING]);
 			if ($actions) {
 				$lk = array_keys($actions, max($actions))[0];
 				$action = $actions[$lk];
@@ -309,63 +316,75 @@ class Admin_Functions
 	}
 
 	/**
-	* Function to replace strings on selected files inside chosen directory.
-	*
-	* This function is called after a successful simply-static export
-	* This function scans HTML, CSS and JS files for URLs that was not converted
-	* from static site to destination site URL. Simply Static not always make it
-	* correct, so we need to manually check it again.
-	*
-	* @param string $directory The directory we will work on
-	* @param string $search The string we are searching for
-	* @param string $replace What we will search for
-	* @param array $allowedExtensions Filetypes to work on
-	*
-	*/
+	 * Function to replace strings on selected files inside chosen directory.
+	 *
+	 * This function is called after a successful simply-static export
+	 * This function scans HTML, CSS and JS files for URLs that was not converted
+	 * from static site to destination site URL. Simply Static not always make it
+	 * correct, so we need to manually check it again.
+	 *
+	 * @param string $directory The directory we will work on
+	 * @param string $search The string we are searching for
+	 * @param string $replace What we will search for
+	 * @param array  $allowedExtensions Filetypes to work on
+	 *
+	 */
 	public function replace_strings(string $directory = '', string $search = '', string $replace = '', array $allowedExtensions = ['html', 'css', 'js'])
 	{
-	$this->blog_settings_slug = "wpmu_client_blog_settings";
-	$allowedExtensions = ['html', 'css', 'js'];
-	if(empty($directory)) {
-        	$directory = get_option($this->blog_settings_slug . '_export_path');
-	        $directory = realpath($directory);
-	}
-	if(empty($search)) $search = network_home_url();
-	$ss_options = '';
-	if(empty($replace)) {
-        	$ss_options = get_option('simply-static', false);
-	        $replace = $ss_options['destination_scheme'] . $ss_options['destination_host'];
-	        $replace = trailingslashit($replace);
-	}
+		$this->blog_settings_slug = "wpmu_client_blog_settings";
+		$allowedExtensions = ['html', 'css', 'js'];
+		if (empty($directory)) {
+			$directory = get_option($this->blog_settings_slug . '_export_path');
+			$directory = realpath($directory);
+		}
+		if (empty($search))
+			$search = network_home_url();
 
-	$reference = current_time( 'j-M-Y-H\h-i\m-s\s' );
-	$log_file = $directory . '/logs/replace-' . $reference . '.log';
-	$replaces = [];
+		$ss_options = get_option('simply-static', false);
+		if (empty($replace)) {
+			$replace = $ss_options['destination_scheme'] . $ss_options['destination_host'];
+			$replace = trailingslashit($replace);
+		}
 
-	$iterator = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($directory));
-	$count = 0;
-	foreach ($iterator as $file) {
-        	if ($file->isFile()) {
-                	$filePath = $file->getPathname();
-                	$extension = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
-	                if (in_array($extension, $allowedExtensions)) {
-        	                $content = file_get_contents($filePath);
-                	        $newContent = str_replace($search, $replace, $content);
-	                        if ($content !== $newContent) {
-        	                        $count++;
-					$htmlContent = preg_replace("/\?ver=[^\s&]+/", '', $newContent);
-                	                file_put_contents($filePath, $htmlContent);
-                        	        file_put_contents($log_file, "Substituição feita em " . $filePath );
-	                        }
-        	        }
-	        }
-	}
-	if($count > 0) {
-        	$message = _e($count . " substituições realizadas nos arquivos", $this->plugin_name, "número de substituições feitas");
-	        $datetime = current_time( 'Y-m-d H:i:s' );
-        	$ss_options['archive_status_messages']['replaces'] = ['message' => $message, 'datetime' => $datetime];
-	        update_option('simply-static', $ss_options);
-	}
+		$reference = current_time('j-M-Y-H\h-i\m-s\s');
+
+		$log_folder = $directory . "/logs";
+		if ($this->check_dir_exists($log_folder))
+			$this->create_directory($log_folder);
+
+		$log_file = $directory . '/logs/replace-' . $reference . '.log';
+
+		if (!file_exists($log_file)) {
+			file_put_contents($log_file, '');
+		}
+
+		$iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($directory));
+		$count = 0;
+		foreach ($iterator as $file) {
+			if ($file->isFile()) {
+				$filePath = $file->getPathname();
+				$extension = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
+				if (in_array($extension, $allowedExtensions)) {
+					$content = file_get_contents($filePath);
+					$newContent = str_replace($search, $replace, $content);
+					if ($content !== $newContent) {
+						$count++;
+						$htmlContent = preg_replace("/\?ver=[^\s&]+/", '', $newContent);
+						file_put_contents($filePath, $htmlContent);
+						file_put_contents($log_file, "Substituição feita em " . $filePath . "\n", FILE_APPEND);
+					}
+				}
+			}
+		}
+
+		if ($count > 0) {
+			$message = $count . " substituições realizadas nos arquivos";
+			$datetime = current_time('Y-m-d H:i:s');
+			$ss_options['archive_status_messages']['replaces'] = ['message' => $message, 'datetime' => $datetime];
+			$updated = update_option('simply-static', $ss_options);
+			if (!$updated)
+				error_log("Não pude atualizar as mensages de status do simply-static");
+		}
 	}
 
 	public function check_export_status()
@@ -376,6 +395,7 @@ class Admin_Functions
 			if (!isset($_POST['blog_id']) || !isset($_POST['timestamp']) || !isset($_POST['reference'])) {
 				error_log("Não recebemos todos os parâmetros para consulta. Função 'check_export_status', class-wpmu-client-admin.php linha " . __LINE__);
 				wp_send_json_error('Não recebemos todos os parâmetros para consulta');
+				return;
 			}
 
 			$blog_id = absint($_POST['blog_id']);
@@ -393,23 +413,23 @@ class Admin_Functions
 			 * to check the action by args reference,
 			 * timestamp and blog id.
 			 */
-			$actions = as_get_scheduled_actions(['hook' => 'wpmu_schedule_export', 'args' => $args, 'order' => 'DESC', 'status' => \ActionScheduler_Store::STATUS_PENDING]);
-			if (!empty($actions)) {	
-				$async_request_lock_expiration = \ActionScheduler::lock()->get_expiration( 'async-request-runner' );
+			$actions = as_get_scheduled_actions(['hook' => 'wpmu_schedule_export', 'args' => $args, 'order' => 'DESC', 'status' => ActionScheduler_Store::STATUS_PENDING]);
+			if (!empty($actions)) {
+				$async_request_lock_expiration = ActionScheduler::lock()->get_expiration('async-request-runner');
 				$expiration = $async_request_lock_expiration - time();
 				wp_send_json_success(['status' => "pending", 'args' => $args, 'expiration' => $expiration]);
 				wp_die();
 				return;
 			}
 
-			$actions = as_get_scheduled_actions(['hook' => 'wpmu_schedule_export', 'args' => $args, 'order' => 'DESC', 'status' => \ActionScheduler_Store::STATUS_RUNNING]);
+			$actions = as_get_scheduled_actions(['hook' => 'wpmu_schedule_export', 'args' => $args, 'order' => 'DESC', 'status' => ActionScheduler_Store::STATUS_RUNNING]);
 			if (!empty($actions)) {
 				wp_send_json_success(['status' => "running", 'args' => $args]);
 				wp_die();
 				return;
 			}
 
-			$actions = as_get_scheduled_actions(['hook' => 'wpmu_schedule_export', 'args' => $args, 'order' => 'DESC', 'status' => \ActionScheduler_Store::STATUS_COMPLETE]);
+			$actions = as_get_scheduled_actions(['hook' => 'wpmu_schedule_export', 'args' => $args, 'order' => 'DESC', 'status' => ActionScheduler_Store::STATUS_COMPLETE]);
 			if (!empty($actions)) {
 				wp_send_json_success(['status' => "finished", 'args' => $args]);
 				wp_die();
@@ -423,10 +443,10 @@ class Admin_Functions
 			$schedule_id = absint($_POST['schedule_id']);
 
 			// Try to get a pending action
-			$action = as_get_scheduled_actions(['hook' => 'wpmu_schedule_export', 'order' => 'DESC', 'status' => \ActionScheduler_Store::STATUS_PENDING]);
+			$action = as_get_scheduled_actions(['hook' => 'wpmu_schedule_export', 'order' => 'DESC', 'status' => ActionScheduler_Store::STATUS_PENDING]);
 			if (isset($action[$schedule_id])) {
 				$args = $action[$schedule_id]->get_args();
-				$async_request_lock_expiration = \ActionScheduler::lock()->get_expiration( 'async-request-runner' );
+				$async_request_lock_expiration = ActionScheduler::lock()->get_expiration('async-request-runner');
 				$expiration = $async_request_lock_expiration - time();
 				wp_send_json_success(['status' => "pending", 'args' => $args, 'expiration' => $expiration]);
 				wp_die();
@@ -434,7 +454,7 @@ class Admin_Functions
 			}
 
 			// If not pending, maybe it is running
-			$action = as_get_scheduled_actions(['hook' => 'wpmu_schedule_export', 'order' => 'DESC', 'status' => \ActionScheduler_Store::STATUS_RUNNING]);
+			$action = as_get_scheduled_actions(['hook' => 'wpmu_schedule_export', 'order' => 'DESC', 'status' => ActionScheduler_Store::STATUS_RUNNING]);
 			if (isset($action[$schedule_id])) {
 				$args = $action[$schedule_id]->get_args();
 				wp_send_json_success(['status' => "running", 'args' => $args]);
@@ -443,7 +463,7 @@ class Admin_Functions
 			}
 
 			// Or it may be finished already
-			$action = as_get_scheduled_actions(['hook' => 'wpmu_schedule_export', 'order' => 'DESC', 'status' => \ActionScheduler_Store::STATUS_COMPLETE]);
+			$action = as_get_scheduled_actions(['hook' => 'wpmu_schedule_export', 'order' => 'DESC', 'status' => ActionScheduler_Store::STATUS_COMPLETE]);
 			if (isset($action[$schedule_id])) {
 				$args = $action[$schedule_id]->get_args();
 				wp_send_json_success(['status' => "finished", 'args' => $args]);
@@ -459,7 +479,7 @@ class Admin_Functions
 	 * @param array $data Associative array of complete site data.
 	 * @param mixed $old_site The old site object if the data belongs to a site being updated, or null if it is a new site being inserted. Defaults to null
 	 */
-	public function check_new_blog_fields(\WP_Error $errors, array $data, $old_site)
+	public function check_new_blog_fields(WP_Error $errors, array $data, $old_site)
 	{
 		if (empty($_POST['blog']['client'])) {
 			$errors->add('site_empty_client', __("O campo de cliente não pode estar vazio", $this->plugin_name));
@@ -478,7 +498,7 @@ class Admin_Functions
 	public function show_client_field()
 	{
 		get_option($this->blog_settings_slug . "_folder_created")
-		?>
+			?>
 		<div class="wrap">
 			<h2>
 				<?php echo __("Dados Locais do Clientes", $this->plugin_name); ?>
@@ -786,7 +806,7 @@ class Admin_Functions
 			$reference = $reference->format('j-M-Y-H\h-i\m-s\s');
 
 
-			$async_request_lock_expiration = \ActionScheduler::lock()->get_expiration( 'async-request-runner' );
+			$async_request_lock_expiration = ActionScheduler::lock()->get_expiration('async-request-runner');
 			$expiration = $async_request_lock_expiration - time();
 			$id = as_enqueue_async_action('wpmu_schedule_export', ['blog_id' => $blog_id, 'timestamp' => $timestamp, 'reference' => $reference], true);
 			$result = ['message' => "Processo de envio agendado com id: " . $id . " e referência: " . $reference . ".\nAguardando início em " . $expiration . " segundos.", 'reference' => $reference, 'id' => $id];
@@ -1084,7 +1104,7 @@ class Admin_Functions
 	 * Add export button to the top bar
 	 * @param WP_Admin_Bar 	$wp_admin_bar The WP_Admin_Bar instance, passed by reference.
 	 */
-	public function add_admin_button(\WP_Admin_Bar $wp_admin_bar)
+	public function add_admin_button(WP_Admin_Bar $wp_admin_bar)
 	{
 
 		if (is_network_admin())

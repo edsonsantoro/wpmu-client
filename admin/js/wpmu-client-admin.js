@@ -14,6 +14,7 @@
     const timedFunction = setInterval(fname, 1000);
     const lastLogFile = server_ref.export_root + server_ref.reference + ".log";
     const select_box = jQuery('.target_selector');
+    const addRedirectButton = jQuery('#add_redirect');
 
     if (select_box.length > 0) {
       select_box.hide();
@@ -292,6 +293,56 @@
         });
       }, 500)
     );
+
+    addRedirectButton.on('click', function (event) {
+      event.preventDefault();
+
+      const sourceUrl = $('#source_url').val();
+      const targetUrl = $('#target_url').val();
+
+      let data = {
+        action: "add_redirect",
+        source_url: sourceUrl,
+        target_url: targetUrl
+      };
+
+      $.post(ajaxurl, data, function(response){
+        if(response.success == false) {
+          alert(response.data);
+          console.log(response);
+        };
+        location.reload();
+      });
+    });
+
+    $('.delete_redirect').on('click', function(elem){
+      let sourceUrl = $(this).data('key');
+      let targetUrl = $(this).data('value');
+      
+      let data = {
+        action: "delete_redirect",
+        source_url: sourceUrl,
+        target_url: targetUrl,
+      };
+
+      $.post(ajaxurl, data, function(response){
+        if(response.success == false){
+          console.log(response);
+          alert(response.data);
+        }
+        location.reload();
+      });
+
+    });
+
+    $('.edit_redirect').on('click', function(elem){
+      let sourceUrl = $(this).data('key');
+      let targetUrl = $(this).data('value');
+      
+      $('#source_url').val(sourceUrl);
+      $('#target_url').val(targetUrl);
+      
+    });
 
     $(document).on('click', function (event) {
       const target = $(event.target);

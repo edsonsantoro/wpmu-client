@@ -62,15 +62,6 @@ class Admin_Settings_Page
 			99
 		);
 
-		add_submenu_page(
-			'wpmu-client-config',
-			'DRB.MKT | Redirecionamentos',
-			'Redirecionamentos',
-			'manage_options',
-			'wpmu-client-redirects',
-			[$this, 'wpmu_client_create_redirects_page']
-		);
-
 	}
 
 	/**
@@ -93,46 +84,7 @@ class Admin_Settings_Page
 		</div>
 	<?php }
 
-	/**
-	 * Render the redirects page
-	 */
-	public function wpmu_client_create_redirects_page()
-	{
-		?>
-		<div class="wrap">
-			<h2>Redirecionamentos</h2>
-			<p>Página de configurações de redirecionamentos para o Gerador de Sites da DRB.MKT</p>
-			<?php settings_errors(); ?>
 
-			<form method="post" action="options.php">
-				<?php
-				settings_fields($this->blog_settings_slug . '_redirects');
-				do_settings_sections($this->blog_settings_slug . '-redirects');
-				submit_button('Salvar Configurações');
-				?>
-			</form>
-		</div>
-	<?php }
-
-	public function save_redirects()
-	{	
-		$source_url = (isset($_POST[$this->blog_settings_slug]['source_url'])) ? sanitize_text_field($_POST[$this->blog_settings_slug]['source_url']) : '';
-		$target_url = (isset($_POST[$this->blog_settings_slug]['target_url'])) ? sanitize_text_field($_POST[$this->blog_settings_slug]['target_url']) : '';
-
-		if(!empty($source_url) && !empty($target_url) ) {
-
-			$existing = get_option($this->blog_settings_slug . "_redirects", []);			
-			$options = [];
-			$options[$source_url] = $target_url;
-			
-			if(!empty($existing)) {
-				array_push($existing, $options);
-			} else {
-				$existing = $options;
-			}
-			update_option($this->blog_settings_slug . "_redirects", $existing);
-		}
-	}
 
 	/**
 	 * Render single site settings page
@@ -141,8 +93,7 @@ class Admin_Settings_Page
 	{
 		register_setting(
 			$this->blog_settings_slug,
-			$this->blog_settings_slug,
-
+			'upload',
 			array($this, 'wpmu_client_sanitize')
 		);
 
@@ -178,72 +129,14 @@ class Admin_Settings_Page
 		);
 	}
 
-	public function sanitize($input){
+	public function sanitize($input)
+	{
 		if (is_array($input)) {
 			return serialize($input); // Serialize a array antes de salvar
 		}
 		return $input;
 	}
 
-	/**
-	 * Render single site settings page
-	 */
-	public function wpmu_client_redirects_page_init()
-	{
-		register_setting(
-			$this->blog_settings_slug . '_redirects',
-			'source_url',
-			[
-				'type' => 'string',
-				'sanitize_callback' => [$this, 'sanitize'],
-				'default' => []
-			]
-		);
-
-		register_setting(
-			$this->blog_settings_slug . '_redirects',
-			'target_url',
-			[
-				'type' => 'string',
-				'sanitize_callback' => [$this, 'sanitize'],
-				'default' => []
-			]
-		);
-
-		add_settings_section(
-			'wpmu_client_redirects',
-			'Redirecionamentos',
-			array($this, 'wpmu_client_section_info'),
-			$this->blog_settings_slug . '-redirects',
-			["description" => "Adicionar um novo redirecionamento"]
-		);
-
-		add_settings_field(
-			'source_url',
-			'URL de Origem',
-			array($this, 'redirects_field_source_url'),
-			$this->blog_settings_slug . '-redirects',
-			'wpmu_client_redirects'
-		);
-
-		add_settings_field(
-			'target_url',
-			'URL de Destino',
-			array($this, 'redirects_field_target_url'),
-			$this->blog_settings_slug . '-redirects',
-			'wpmu_client_redirects'
-		);
-
-		add_settings_section(
-			'wpmu_client_redirects2',
-			'Redirecionamentos',
-			array($this, 'custom_list_table_section_callback'),
-			$this->blog_settings_slug . '-redirects',
-			["description" => "Adicionar um novo redirecionamento"]
-		);
-
-		
-	}
 
 	public function get_export_actions()
 	{
@@ -276,75 +169,6 @@ class Admin_Settings_Page
 				$args['description']
 			);
 		}
-	}
-
-	public function get_internal_permalink()
-	{
-		if (!isset($_POST['partial_input']) || empty($_POST['partial_input'])) {
-			wp_send_json_error();
-		}
-
-		$search = sanitize_text_field($_POST['partial_input']);
-
-		$args = array(
-			's' => $search,
-			'post_type' => 'any',
-			'posts_per_page' => -1, // Mostrar todos os posts
-		);
-
-		$query = new WP_Query($args);
-		$links = [];
-		if ($query->have_posts()) {
-			while ($query->have_posts()) {
-				$query->the_post();
-				$permalink = get_permalink();
-				$id = get_the_ID();
-				$links[$id] = $permalink;
-			}
-			wp_reset_postdata();
-			wp_send_json_success($links);
-		} else {
-			wp_send_json_error();
-		}
-	}
-
-	public function redirects_field_source_url()
-	{
-		printf(
-			'<input class="long-field regular-text" type="text" name="%s[source_url]" id="source_url" value="" />',
-			$this->blog_settings_slug
-		);
-	}
-
-	public function redirects_field_target_url()
-	{
-		printf(
-			'<input class="long-field regular-text" type="text" name="%s[target_url]" id="target_url" value="" /><ul class="target_selector" style="display:none"></ul> ',
-			$this->blog_settings_slug
-		);
-	}
-
-	// Função de callback para renderizar a seção
-	public function custom_list_table_section_callback() {
-    // Mostrar a tabela customizada aqui
-	echo '<div class="wrap">';
-	echo '<h1>teste</h1>';
-    $list_table = new \Wpmu_Client\Custom_List_Table();
-    $list_table->prepare_items();
-    $list_table->display();
-	echo '</div>';
-}
-
-
-	public function redirect_field_submit()
-	{	
-
-		new Custom_List_Table();
-		printf(
-			'<input class="button button-primary" type="button" name="%s[add_redirect_button]" id="add_redirect_button" value="%s">',
-			$this->blog_settings_slug,
-			"Adicionar Redirecionamento"
-		);
 	}
 
 	public function export_button_callback()

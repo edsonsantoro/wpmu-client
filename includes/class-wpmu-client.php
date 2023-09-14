@@ -182,6 +182,11 @@ class Wpmu_Client
 		require_once plugin_dir_path(dirname(__FILE__)) . 'admin/partials/wpmu-client-admin-display.php';
 
 		/**
+		 * The class responsible for the redirect settings page of this plugin for a single blog.
+		 */
+		require_once plugin_dir_path(dirname(__FILE__)) . 'admin/partials/wpmu-client-admin-redirects.php';
+
+		/**
 		 * The class responsible for the settings page of this plugin for the network.
 		 */
 		require_once plugin_dir_path(dirname(__FILE__)) . 'admin/partials/wpmu-client-network-settings-page.php';
@@ -196,9 +201,12 @@ class Wpmu_Client
 		 */
 		require_once plugin_dir_path(dirname(__FILE__)) . 'admin/class-wpmu-client-admin-notices.php';
 
+		/**
+		 * The class that handles tables for admin pages
+		 */
 		require_once plugin_dir_path(dirname(__FILE__)) . 'admin/partials/wpmu-client-table.php';
 
-
+		// TODO Trabalhar nessa página de clientes
 		/**
 		 * The class responsible for adding clients as part of the network.
 		 */
@@ -245,6 +253,7 @@ class Wpmu_Client
 
 		$plugin_admin = new Admin_Functions($plugin_name, $version, $network_settings_slug, $blog_settings_slug);
 		$blog_admin_page = new Admin_Settings_Page($plugin_name, $network_settings_slug, $blog_settings_slug);
+		$redirects_page = new Admin_Redirect_Settings_Page($plugin_name, $network_settings_slug, $blog_settings_slug);
 		$network_admin_page = new Network_Settings_Page($plugin_name, $version, $network_settings_slug, $blog_settings_slug);
 		$network_tab_page = new Network_Tab_Page($plugin_name, $version, $network_settings_slug, $blog_settings_slug);
 
@@ -276,15 +285,23 @@ class Wpmu_Client
 		$this->loader->add_action('admin_init', $blog_admin_page, 'get_export_actions');
 		// Render single site settings page
 		$this->loader->add_action('admin_init', $blog_admin_page, 'wpmu_client_page_init');
-		// Render single site redirections page
-		$this->loader->add_action('admin_init', $blog_admin_page, 'wpmu_client_redirects_page_init');
 
-		$this->loader->add_action('wp_ajax_get_internal_permalink', $blog_admin_page, 'get_internal_permalink');
-		$this->loader->add_action('admin_init', $blog_admin_page, 'save_redirects', 99);
+		
+		// ---------------- Site Redirect Page actions and filters ----------------
+		
+		// Add this page to the menu
+		$this->loader->add_action('admin_menu', $redirects_page, 'wpmu_client_add_plugin_page');
+		// Initialize the redirects page
+		$this->loader->add_action('admin_init', $redirects_page, 'wpmu_client_redirects_page_init');
+		// Ajax function to get internal permalinks as user type
+		$this->loader->add_action('wp_ajax_get_internal_permalink', $redirects_page, 'get_internal_permalink');
+		// Save the redirects
+		//$this->loader->add_action('admin_init', $redirects_page, 'save_redirects', 99);
 
-
-
-
+		$this->loader->add_action('wp_ajax_add_redirect', $redirects_page, 'save_redirects');
+		$this->loader->add_action('wp_ajax_delete_redirect', $redirects_page, 'delete_redirect');
+		$this->loader->add_action('ss_completed', $redirects_page, 'build_htaccess');
+		
 		// ---------------- General Admin Functions actions and filters ----------------
 		// Display client site field on WPMU New Site screen
 		$this->loader->add_action('network_site_new_form', $plugin_admin, 'show_client_field');

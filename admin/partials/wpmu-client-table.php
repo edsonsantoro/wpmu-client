@@ -52,9 +52,9 @@ class Custom_List_Table extends WP_List_Table {
             case 'value':
                 return $item['value'];
             case 'edit':
-                return '<button class="table-buttons" data-key="'.$item['key'].'" data-value="'.$item['value'].'">Editar</button>';
+                return '<button type="button" class="table-buttons edit_redirect" data-key="'.$item['key'].'" data-value="'.$item['value'].'">Editar</button>';
             case 'delete':
-                return '<button class="table-buttons" id="delete_redirect" data-key="'.$item['key'].'" data-value="'.$item['value'].'">Excluir</button>';
+                return '<button type="button" class="table-buttons delete_redirect" data-key="'.$item['key'].'" data-value="'.$item['value'].'">Excluir</button>';
             default:
                 return '';
         }

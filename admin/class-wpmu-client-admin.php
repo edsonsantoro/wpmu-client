@@ -252,6 +252,7 @@ class Admin_Functions
 
 		$action = null;
 		$reference = '';
+		$timestamp = '';
 		if (as_has_scheduled_action('wpmu_schedule_export')) {
 			$next_action = as_get_scheduled_actions(['hook' => 'wpmu_schedule_export', 'order' => 'DESC']);
 			if ($next_action) {

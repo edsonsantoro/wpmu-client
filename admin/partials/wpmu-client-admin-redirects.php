@@ -187,9 +187,12 @@ class Admin_Redirect_Settings_Page {
 			$updated = update_option( $blog_settings_slug . "_redirects", $existing );
 
 			if ( $updated ) {
+				$this->build_htaccess( 'success' );
 				wp_send_json_success();
+                wp_die();
 			} else {
 				wp_send_json_error();
+                wp_die();
 			}
 		}
 	}
@@ -199,6 +202,7 @@ class Admin_Redirect_Settings_Page {
 
 		if ( ! isset( $_POST['source_url'] ) || ! isset( $_POST['target_url'] ) ) {
 			wp_send_json_error( 'Não recebi a chave do redirecionamento para excluir.' );
+            wp_die();
 		}
 
 		$source_url = sanitize_text_field( $_POST['source_url'] );
@@ -206,18 +210,25 @@ class Admin_Redirect_Settings_Page {
 
 		$redirects = get_option( $blog_settings_url . "_redirects", false );
 
-		if ( ! $redirects )
+		if ( ! $redirects ) {
 			wp_send_json_error( 'Não pude obter a lista de redirecionamentos, ou ela está vazia.' );
+            wp_die();
+        }
 
 		if ( array_key_exists( $source_url, $redirects ) ) {
 			unset( $redirects[ $source_url ] );
 			$updated = update_option( $blog_settings_url . "_redirects", $redirects );
-			if ( ! $updated )
+			if ( ! $updated ) {
 				wp_send_json_error( 'Não fui capaz de atualizar a opção.' );
+                wp_die();
+			}
 
+			$this->build_htaccess( 'success' );
 			wp_send_json_success( 'Redirecionamento removido.' );
+            wp_die();
 		}
 		wp_send_json_error( 'Esse redirecionamento não existe' );
+        wp_die();
 
 	}
 
@@ -355,6 +366,7 @@ class Admin_Redirect_Settings_Page {
 	public function get_internal_permalink() {
 		if ( ! isset( $_POST['partial_input'] ) || empty( $_POST['partial_input'] ) ) {
 			wp_send_json_error();
+            wp_die();
 		}
 
 		$search = sanitize_text_field( $_POST['partial_input'] );
@@ -377,8 +389,10 @@ class Admin_Redirect_Settings_Page {
 			}
 			wp_reset_postdata();
 			wp_send_json_success( $links );
+            wp_die();
 		} else {
 			wp_send_json_error();
+            wp_die();
 		}
 	}
 

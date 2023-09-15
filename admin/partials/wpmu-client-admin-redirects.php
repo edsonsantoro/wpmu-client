@@ -197,6 +197,13 @@ class Admin_Redirect_Settings_Page {
 		}
 	}
 
+	/**
+	 * Function to delete redirects. Sends a json
+     * response to client.
+	 *
+	 * @return void
+	 * 
+	 */
 	public function delete_redirect() {
 		$blog_settings_url = $this->get_blog_settings_slug();
 
@@ -232,6 +239,15 @@ class Admin_Redirect_Settings_Page {
 
 	}
 
+	/**
+	 * Function that builds the .htaccess that will be
+     * sent to client site 
+	 *
+	 * @param string $status Should be success to run
+	 * 
+	 * @return void
+	 * 
+	 */
 	public function build_htaccess( string $status ) {
 		if ( $status != "success" ) {
 			return;

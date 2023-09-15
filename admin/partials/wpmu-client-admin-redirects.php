@@ -323,11 +323,21 @@ class Admin_Redirect_Settings_Page
         );
 
         add_settings_field(
+            'force_https',
+            'Forçar HTTPS no site?',
+            array($this, 'redirects_field_force_https'),
+            $this->blog_settings_slug . '-redirects',
+            'wpmu_client_redirects',
+            ["description" => "Marcando essa opção, uma regra de redirecionamento será adicionada ao .htaccess do servidor do cliente. Se houver problemas de loop de redirecionamento, tente desativar esta opção.", "title" => "Forçar HTTPS no site remoto"]
+        );
+
+        add_settings_field(
             'source_url',
             'Página de origem',
             array($this, 'redirects_field_source_url'),
             $this->blog_settings_slug . '-redirects',
-            'wpmu_client_redirects'
+            'wpmu_client_redirects',
+            ['title' => 'URL de Origem']
         );
 
         add_settings_field(
@@ -335,7 +345,8 @@ class Admin_Redirect_Settings_Page
             'Página de destino',
             array($this, 'redirects_field_target_url'),
             $this->blog_settings_slug . '-redirects',
-            'wpmu_client_redirects'
+            'wpmu_client_redirects',
+            ['title' => 'URL de Destino']
         );
 
         add_settings_section(
@@ -391,10 +402,11 @@ class Admin_Redirect_Settings_Page
     /**
      * Add the redirect source URL
      */
-    public function redirects_field_source_url()
+    public function redirects_field_source_url(array $args)
     {
         printf(
-            '<input class="long-field regular-text" type="text" name="%s[source_url]" id="source_url" value="" />',
+            '<input class="long-field regular-text" type="text" title="%s" name="%s[source_url]" id="source_url" value="" />',
+            $args['title'],
             $this->blog_settings_slug
         );
     }
@@ -402,34 +414,35 @@ class Admin_Redirect_Settings_Page
     /**
      * Add the redirect target URL
      */
-    public function redirects_field_target_url()
+    public function redirects_field_target_url(array $args)
     {
         printf(
-            '<input class="long-field regular-text" type="text" name="%s[target_url]" id="target_url" value="" /><ul class="target_selector" style="display:none"></ul> ',
+            '<input class="long-field regular-text" type="text" title="%s" name="%s[target_url]" id="target_url" value="" /><ul class="target_selector" style="display:none"></ul> ',
+            $args['title'],
             $this->blog_settings_slug
         );
     }
 
     /**
-     * Add the submit button
+     * Add the redirect target URL
      */
-    public function redirect_field_submit()
+    public function redirects_field_force_https(array $args)
     {
-
-        new Custom_List_Table();
         printf(
-            '<input class="button button-primary" type="button" name="%s[add_redirect_button]" id="add_redirect_button" value="%s">',
-            $this->blog_settings_slug,
-            "Adicionar Redirecionamento"
+            '<label for="force_https">%s</label>
+            <br><input type="checkbox" title="%s" name="%s[force_https]" id="force_https" />',
+            $args['description'],
+            $args['title'],
+            $this->blog_settings_slug
         );
     }
+
 
     /**
      * Render the table of redirects to the page
      */
     public function custom_list_table_section_callback()
     {
-        // Mostrar a tabela customizada aqui
         echo '<div class="wrap">';
         $list_table = new Custom_List_Table();
         $list_table->prepare_items();

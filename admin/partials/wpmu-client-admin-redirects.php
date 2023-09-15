@@ -189,17 +189,17 @@ class Admin_Redirect_Settings_Page {
 			if ( $updated ) {
 				$this->build_htaccess( 'success' );
 				wp_send_json_success();
-                wp_die();
+				wp_die();
 			} else {
 				wp_send_json_error();
-                wp_die();
+				wp_die();
 			}
 		}
 	}
 
 	/**
 	 * Function to delete redirects. Sends a json
-     * response to client.
+	 * response to client.
 	 *
 	 * @return void
 	 * 
@@ -209,7 +209,7 @@ class Admin_Redirect_Settings_Page {
 
 		if ( ! isset( $_POST['source_url'] ) || ! isset( $_POST['target_url'] ) ) {
 			wp_send_json_error( 'Não recebi a chave do redirecionamento para excluir.' );
-            wp_die();
+			wp_die();
 		}
 
 		$source_url = sanitize_text_field( $_POST['source_url'] );
@@ -219,29 +219,29 @@ class Admin_Redirect_Settings_Page {
 
 		if ( ! $redirects ) {
 			wp_send_json_error( 'Não pude obter a lista de redirecionamentos, ou ela está vazia.' );
-            wp_die();
-        }
+			wp_die();
+		}
 
 		if ( array_key_exists( $source_url, $redirects ) ) {
 			unset( $redirects[ $source_url ] );
 			$updated = update_option( $blog_settings_url . "_redirects", $redirects );
 			if ( ! $updated ) {
 				wp_send_json_error( 'Não fui capaz de atualizar a opção.' );
-                wp_die();
+				wp_die();
 			}
 
 			$this->build_htaccess( 'success' );
 			wp_send_json_success( 'Redirecionamento removido.' );
-            wp_die();
+			wp_die();
 		}
 		wp_send_json_error( 'Esse redirecionamento não existe' );
-        wp_die();
+		wp_die();
 
 	}
 
 	/**
 	 * Function that builds the .htaccess that will be
-     * sent to client site 
+	 * sent to client site 
 	 *
 	 * @param string $status Should be success to run
 	 * 
@@ -253,12 +253,16 @@ class Admin_Redirect_Settings_Page {
 			return;
 		}
 
+		$https = '';
 		$directory = get_option( $this->blog_settings_slug . '_export_path' );
 		$directory = realpath( $directory );
 		$htaccessFile = $directory . "/.htaccess";
 
 		$redirects = get_option( $this->get_blog_settings_slug() . "_redirects", false );
-		$https = "RewriteCond %{HTTPS} !=on\nRewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]\nRewriteEngine On\n";
+		$force_https = get_option( $this->get_blog_settings_slug() . "_force_https", false );
+		if ( $force_https ) {
+			$https = "RewriteCond %{HTTPS} !=on\nRewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]\nRewriteEngine On\n";
+		}
 
 		if ( $fileHandle = fopen( $htaccessFile, 'w' ) ) {
 			fwrite( $fileHandle, $https );
@@ -382,7 +386,7 @@ class Admin_Redirect_Settings_Page {
 	public function get_internal_permalink() {
 		if ( ! isset( $_POST['partial_input'] ) || empty( $_POST['partial_input'] ) ) {
 			wp_send_json_error();
-            wp_die();
+			wp_die();
 		}
 
 		$search = sanitize_text_field( $_POST['partial_input'] );
@@ -405,10 +409,10 @@ class Admin_Redirect_Settings_Page {
 			}
 			wp_reset_postdata();
 			wp_send_json_success( $links );
-            wp_die();
+			wp_die();
 		} else {
 			wp_send_json_error();
-            wp_die();
+			wp_die();
 		}
 	}
 

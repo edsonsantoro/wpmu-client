@@ -21,12 +21,12 @@
     }
 
     // Load the last export log at pageload and set text value
-    var lastLog = loadFile(lastLogFile);
-    export_box.text(lastLog);
-    export_box.scrollTop(export_box.prop('scrollHeight'));
-
-    console.log(server_ref);
-
+    if(reference != undefined && reference != ''){
+      var lastLog = loadFile(lastLogFile);
+      export_box.text(lastLog);
+      export_box.scrollTop(export_box.prop('scrollHeight'));    
+    }
+    
     // Delay keyup function
     function delay(callback, ms) {
       var timer = 0;
@@ -51,7 +51,7 @@
       try {
         xmlhttp.send();
       } catch (error) {
-        xmlhttp.onerror();
+        // error
       }
 
       if (xmlhttp.status == 200) {
@@ -220,7 +220,6 @@
 
             for (const id in permalinksObject) {
               const permalink = permalinksObject[id];
-              console.log(`ID: ${id}, Permalink: ${permalink}`);
               select_box.append(`<li data-value="${id}">${permalink}</li>`);
             }
             select_box.fadeIn(200);

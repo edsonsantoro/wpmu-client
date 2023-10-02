@@ -10,8 +10,7 @@
     const blogId = jQuery("input#blog_id").val();
     const now = new Date();
     const timestamp = "@" + Math.round(now.getTime() / 1000);
-    var fname = null;
-    const timedFunction = setInterval(fname, 1000);
+    var   fname = null;
     const lastLogFile = server_ref.export_root + server_ref.reference + ".log";
     const select_box = jQuery('.target_selector');
     const addRedirectButton = jQuery('#add_redirect');
@@ -296,13 +295,15 @@
     addRedirectButton.on('click', function (event) {
       event.preventDefault();
 
-      const sourceUrl = $('#source_url').val();
-      const targetUrl = $('#target_url').val();
+      let sourceUrl = $('#source_url').val();
+      let targetUrl = $('#target_url').val();
+      let forceHttps = $('#force_https').is(':checked');
 
       let data = {
         action: "add_redirect",
         source_url: sourceUrl,
-        target_url: targetUrl
+        target_url: targetUrl,
+        force_https: forceHttps
       };
 
       $.post(ajaxurl, data, function(response){

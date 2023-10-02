@@ -159,7 +159,7 @@ class Admin_Redirect_Settings_Page {
 				do_settings_sections( $this->blog_settings_slug . '-redirects' );
 				//submit_button('Salvar Configurações');
 				?>
-				<button type="button" class="button button-primary" id="add_redirect">Adicionar Redirecionamento</button>
+				<button type="button" class="button button-primary" id="add_redirect">Salvar Opções</button>
 			</form>
 		</div>
 	<?php }
@@ -173,28 +173,29 @@ class Admin_Redirect_Settings_Page {
 	 */
 	public function save_redirects() {
 		$blog_settings_slug = $this->get_blog_settings_slug();
-		$source_url = ( isset( $_POST[ $blog_settings_slug ]['source_url'] ) ) ? sanitize_text_field( $_POST[ $blog_settings_slug ]['source_url'] ) : '';
-		$target_url = ( isset( $_POST[ $blog_settings_slug ]['target_url'] ) ) ? sanitize_text_field( $_POST[ $blog_settings_slug ]['target_url'] ) : '';
 
 		$source_url = ( isset( $_POST['source_url'] ) ) ? sanitize_text_field( $_POST['source_url'] ) : '';
 		$target_url = ( isset( $_POST['target_url'] ) ) ? sanitize_text_field( $_POST['target_url'] ) : '';
+		$force_https = ( isset( $_POST['force_https'] ) && "true" == $_POST['force_https'] ) ? true : false;
+	
+		$updated = update_option($blog_settings_slug . "_force_https", $force_https);	
 
-
-		if ( ! empty( $source_url ) && ! empty( $target_url ) ) {
+		if ( ! empty( $source_url ) && ! empty( $target_url )  ) {
 
 			$existing = get_option( $blog_settings_slug . "_redirects", [] );
 			$existing[ $source_url ] = $target_url;
 			$updated = update_option( $blog_settings_slug . "_redirects", $existing );
-
-			if ( $updated ) {
-				$this->build_htaccess( 'success' );
-				wp_send_json_success();
-				wp_die();
-			} else {
-				wp_send_json_error();
-				wp_die();
-			}
 		}
+
+		if ( $updated ) {
+			$this->build_htaccess( 'success' );
+			wp_send_json_success();
+			wp_die();
+		} else {
+			wp_send_json_error('Não foi possível atualizar as opções');
+			wp_die();
+		}
+        
 	}
 
 	/**
@@ -253,13 +254,15 @@ class Admin_Redirect_Settings_Page {
 			return;
 		}
 
+		$blog_settings_slug = $this->get_blog_settings_slug();
+
 		$https = '';
 		$directory = get_option( $this->blog_settings_slug . '_export_path' );
 		$directory = realpath( $directory );
 		$htaccessFile = $directory . "/.htaccess";
 
-		$redirects = get_option( $this->get_blog_settings_slug() . "_redirects", false );
-		$force_https = get_option( $this->get_blog_settings_slug() . "_force_https", false );
+		$redirects = get_option( $blog_settings_slug . "_redirects", false );
+		$force_https = get_option( $blog_settings_slug . "_force_https", false );
 		if ( $force_https ) {
 			$https = "RewriteCond %{HTTPS} !=on\nRewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]\nRewriteEngine On\n";
 		}
@@ -442,12 +445,15 @@ class Admin_Redirect_Settings_Page {
 	 * Add the redirect target URL
 	 */
 	public function redirects_field_force_https( array $args ) {
+		$option = get_option($this->blog_settings_slug . "_force_https", false);
+		$checked = (isset($option) && $option == true) ? "checked" : "";
 		printf(
 			'<label for="force_https">%s</label>
-            <br><input type="checkbox" title="%s" name="%s[force_https]" id="force_https" />',
+            <br><input type="checkbox" title="%s" name="%s[force_https]" id="force_https" %s />',
 			$args['description'],
 			$args['title'],
-			$this->blog_settings_slug
+			$this->blog_settings_slug,
+			$checked
 		);
 	}
 

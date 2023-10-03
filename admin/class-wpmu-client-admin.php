@@ -376,7 +376,7 @@ class Admin_Functions
 					$newContent = str_replace($search, $replace, $content);
 					if ($content !== $newContent) {
 						$count++;
-						$htmlContent = preg_replace("/\?ver=[^\s&]+/", '', $newContent);
+						$htmlContent = preg_replace("/\?ver=[^\s&\"]+/", '', $newContent);
 						file_put_contents($filePath, $htmlContent);
 						file_put_contents($log_file, "Substituição feita em " . $filePath . "\n", FILE_APPEND);
 					}
@@ -728,19 +728,18 @@ class Admin_Functions
 		$options = get_blog_option($new_blog_id, 'simply-static');
 
 		$urls_to_exclude = $options['urls_to_exclude'];
-		$exclude_feed = array(
-			site_url() . DIRECTORY_SEPARATOR . 'feed' => array(
-				'url' => site_url() . DIRECTORY_SEPARATOR . 'feed',
-				'do_not_save' => '1',
-				'do_not_follow' => '1',
-			)
-		);
 
-		if (is_array($urls_to_exclude)) {
-			$urls_to_exclude = array_merge($urls_to_exclude, $exclude_feed);
-		} else {
-			$urls_to_exclude = $exclude_feed;
+		if( !isset($urls_to_exclude) || empty($urls_to_exclude) ) {
+
+			$exclude_feed = "wp-json\nwp-login";
+
+			if (is_array($urls_to_exclude)) {
+				$urls_to_exclude = array_merge($urls_to_exclude, [$exclude_feed]);
+			} else {
+				$urls_to_exclude = $exclude_feed;
+			}
 		}
+
 		$options['force_replace_url'] = 'on';
 		$options['urls_to_exclude'] = $urls_to_exclude;
 		$options['clear_directory_before_export'] = 'on';

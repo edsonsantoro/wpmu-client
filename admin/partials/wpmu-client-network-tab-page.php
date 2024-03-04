@@ -223,7 +223,7 @@ class Network_Tab_Page
     public function client_callback(int $blog_id)
     {
         $folder_created = get_blog_option($blog_id, $this->blog_settings_slug . '_folder_created', 0);
-        $disabled = ($folder_created == 1) ? 'disabled' : '';
+        $disabled = ($folder_created == 1) ? '' : '';
         printf(
             '<input class="regular-text" type="text" name="%s[client]" id="client" placeholder="cliente" value="%s" %s>
 			<p>%s</p>

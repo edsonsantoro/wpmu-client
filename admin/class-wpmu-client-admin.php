@@ -355,7 +355,7 @@ class Admin_Functions
 
 		$log_folder = $directory . "/logs";
 
-		if ($this->check_dir_exists($log_folder)){
+		if (!$this->check_dir_exists($log_folder)){
 			$this->create_directory($log_folder);
 		}
 
@@ -377,6 +377,10 @@ class Admin_Functions
 					if ($content !== $newContent) {
 						$count++;
 						$htmlContent = preg_replace("/\?ver=[^\s&\"]+/", '', $newContent);
+                        if(!file_exists($filePath)) {
+                        	$fileHandler = fopen($filePath, 'w');
+							fclose($fileHandler);
+                        }
 						file_put_contents($filePath, $htmlContent);
 						file_put_contents($log_file, "Substituição feita em " . $filePath . "\n", FILE_APPEND);
 					}
@@ -866,7 +870,7 @@ class Admin_Functions
 		if (!$client) {
 			$notice = "WPMU-CLIENT: Nome de cliente não definido. Abortando.";
 			error_log($notice);
-			new Notice($notice, 'error', true);
+			new Notice($notice, 'error', false);
 			wp_mail(wp_get_current_user()->data->user_email, "WPMU-Client", $notice);
 			return false;
 		}
@@ -875,7 +879,7 @@ class Admin_Functions
 		if (empty($export_path)) {
 			$notice = "WPMU-CLIENT: Caminho de exportação não definido. Abortando.";
 			error_log($notice);
-			new Notice($notice, 'error', true);
+			new Notice($notice, 'error', false);
 			wp_mail(wp_get_current_user()->data->user_email, "WPMU-Client", $notice);
 			return false;
 		}
@@ -889,7 +893,7 @@ class Admin_Functions
 		if (!$lftp) {
 			$notice = $this->plugin_name . ": Erro: O sistema não contém o comando LFTP. Abortando.";
 			error_log($notice);
-			new Notice($notice, 'error', true);
+			new Notice($notice, 'error', false);
 			wp_mail(wp_get_current_user()->data->user_email, "WPMU-Client", $notice);
 			return false;
 		}
@@ -963,8 +967,9 @@ class Admin_Functions
 	 * @param mixed $command_name
 	 * @return bool
 	 */
-	private function command_exists($command_name)
+	private function command_exists(string $command_name = '')
 	{
+        if(empty($command_name)) return false;
 		return (null === shell_exec("command -v $command_name")) ? false : true;
 	}
 

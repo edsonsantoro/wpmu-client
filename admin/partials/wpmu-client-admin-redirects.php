@@ -266,6 +266,9 @@ class Admin_Redirect_Settings_Page {
 		if ( $force_https ) {
 			$https = "RewriteCond %{HTTPS} !=on\nRewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]\nRewriteEngine On\n";
 		}
+      
+      $https .= "RewriteEngine On\nRewriteBase /\nRewriteCond %{HTTP_HOST} ^www\.(.*)$ [NC]\nRewriteRule ^(.*)$ https://%1/$1 [R=301,L]\n\n";
+      $https .= "<IfModule mod_headers.c>\n<FilesMatch \"\.(js|css|woff|woff2|eot|ttf|png|jpg|svg|ico|jpeg|webp)$\">\nHeader set Cache-Control \"max-age=31536000, public\"\n</FilesMatch>\n</IfModule>";
 
 		if ( $fileHandle = fopen( $htaccessFile, 'w' ) ) {
 			fwrite( $fileHandle, $https );

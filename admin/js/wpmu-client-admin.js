@@ -47,8 +47,9 @@
       xmlhttp.addEventListener("error", logFailed);
 
       xmlhttp.open("GET", filePath, false);
+      xmlhttp.setRequestHeader("Authorization", "Basic " + btoa("drb.mkt:drb.mkt"));
       try {
-        xmlhttp.send();
+        xmlhttp.send(null);
       } catch (error) {
         // error
       }

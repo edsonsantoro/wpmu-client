@@ -51,11 +51,13 @@
       try {
         xmlhttp.send(null);
       } catch (error) {
-        // error
+        result =  "Log nao encontrado";
       }
 
       if (xmlhttp.status == 200) {
         result = xmlhttp.responseText;
+      } else if (xmlhttp.status == 404) {
+	result = "Log não encontrado";
       }
       return result;
     }

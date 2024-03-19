@@ -125,6 +125,15 @@ class Network_Tab_Page
             $blog_id
         );
 
+        add_settings_field(
+            "client",
+            __('Email para formulários', $this->plugin_name),
+            [$this, "client_email_callback"],
+            $this->blog_settings_slug . "-tab",
+            $this->blog_settings_slug . "_client_section",
+            $blog_id
+        );
+
         add_settings_section(
             $this->blog_settings_slug . "_ss_section",
             __("Opções do Gerador", $this->plugin_name),
@@ -236,6 +245,17 @@ class Network_Tab_Page
         );
     }
 
+    public function client_email_callback(int $blog_id)
+    {
+        printf(
+            '<input class="regular-text" type="email" name="%s[client_email]" id="client_email" placeholder="cliente@email.com" value="%s">',
+            $this->blog_settings_slug,
+            get_blog_option($blog_id, $this->blog_settings_slug . "_client_email", ""),
+            __("Digite o email que vai receber todos os dados de formulário para este site.", $this->plugin_name),
+            ""
+        );
+    }
+
     /**
      * Render infos on section
      */
@@ -332,6 +352,7 @@ class Network_Tab_Page
 
         $options = [
             "client" => "",
+            "client_email" => "",
             "ftp_host" => "",
             "ftp_user" => "",
             "ftp_pass" => "",

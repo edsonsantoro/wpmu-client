@@ -301,6 +301,7 @@ class Wpmu_Client
 		$this->loader->add_action('wp_ajax_add_redirect', $redirects_page, 'save_redirects');
 		$this->loader->add_action('wp_ajax_delete_redirect', $redirects_page, 'delete_redirect');
 		$this->loader->add_action('ss_completed', $redirects_page, 'build_htaccess');
+		$this->loader->add_action('ss_completed', $redirects_page, 'build_sendmail');
 		
 		// ---------------- General Admin Functions actions and filters ----------------
 		// Display client site field on WPMU New Site screen

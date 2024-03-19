@@ -51,12 +51,15 @@
       try {
         xmlhttp.send(null);
       } catch (error) {
-        // error
+          result = "Erro ao tentar obter o Log anterior."
       }
 
       if (xmlhttp.status == 200) {
         result = xmlhttp.responseText;
+      } else if (xmlhttp.status == 404) {
+        result = "Log não encontrado. Possivelmente excluído por uma nova geração do site estático."
       }
+
       return result;
     }
 

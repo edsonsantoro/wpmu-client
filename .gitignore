@@ -3,3 +3,7 @@ docker-compose.yml
 xmlrpc.php
 
 /vendor/
+gen-2024-03-19-23b5137.sql
+gen-db.tar.gz
+get-db.bat
+get-db.sh

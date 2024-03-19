@@ -261,7 +261,7 @@ class Admin_Redirect_Settings_Page {
 		$directory = realpath( $directory );
 		$htaccessFile = $directory . "/.htaccess";
 
-		$redirects = get_option( $blog_settings_slug . "_redirects", false );
+		$redirects = get_option( $blog_settings_slug . "_redirects", [] );
 		$force_https = get_option( $blog_settings_slug . "_force_https", false );
 		if ( $force_https ) {
 			$https = "RewriteCond %{HTTPS} !=on\nRewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]\nRewriteEngine On\n";
@@ -473,7 +473,8 @@ class Admin_Redirect_Settings_Page {
 	}
 
 	public function build_sendmail() {
-		$source_path = plugin_dir_path( 'wpmu-client/admin/partials/wpmu-client-sendmail.php' );
+
+		$source_path = plugin_dir_path( __FILE__ ) . '/wpmu-client-sendmail.php' ;
 		$destination_path = WP_CONTENT_DIR . '/uploads/sendmail.php';
 
 		if ( copy( $source_path, $destination_path ) ) {

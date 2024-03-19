@@ -47,7 +47,7 @@ class Admin_Redirect_Settings_Page {
 	 * 
 	 */
 	public function __construct( string $plugin_name, string $network_settings_slug, string $blog_settings_slug ) {
-		if ( empty( $plugin_name ) || empty( $network_settings_slug ) || empty( $blog_settings_slug ) )
+		if ( empty ( $plugin_name ) || empty ( $network_settings_slug ) || empty ( $blog_settings_slug ) )
 			return;
 
 		$this->set_plugin_name( $plugin_name );
@@ -174,13 +174,13 @@ class Admin_Redirect_Settings_Page {
 	public function save_redirects() {
 		$blog_settings_slug = $this->get_blog_settings_slug();
 
-		$source_url = ( isset( $_POST['source_url'] ) ) ? sanitize_text_field( $_POST['source_url'] ) : '';
-		$target_url = ( isset( $_POST['target_url'] ) ) ? sanitize_text_field( $_POST['target_url'] ) : '';
-		$force_https = ( isset( $_POST['force_https'] ) && "true" == $_POST['force_https'] ) ? true : false;
-	
-		$updated = update_option($blog_settings_slug . "_force_https", $force_https);	
+		$source_url = ( isset ( $_POST['source_url'] ) ) ? sanitize_text_field( $_POST['source_url'] ) : '';
+		$target_url = ( isset ( $_POST['target_url'] ) ) ? sanitize_text_field( $_POST['target_url'] ) : '';
+		$force_https = ( isset ( $_POST['force_https'] ) && "true" == $_POST['force_https'] ) ? true : false;
 
-		if ( ! empty( $source_url ) && ! empty( $target_url )  ) {
+		$updated = update_option( $blog_settings_slug . "_force_https", $force_https );
+
+		if ( ! empty ( $source_url ) && ! empty ( $target_url ) ) {
 
 			$existing = get_option( $blog_settings_slug . "_redirects", [] );
 			$existing[ $source_url ] = $target_url;
@@ -192,10 +192,10 @@ class Admin_Redirect_Settings_Page {
 			wp_send_json_success();
 			wp_die();
 		} else {
-			wp_send_json_error('Não foi possível atualizar as opções');
+			wp_send_json_error( 'Não foi possível atualizar as opções' );
 			wp_die();
 		}
-        
+
 	}
 
 	/**
@@ -208,7 +208,7 @@ class Admin_Redirect_Settings_Page {
 	public function delete_redirect() {
 		$blog_settings_url = $this->get_blog_settings_slug();
 
-		if ( ! isset( $_POST['source_url'] ) || ! isset( $_POST['target_url'] ) ) {
+		if ( ! isset ( $_POST['source_url'] ) || ! isset ( $_POST['target_url'] ) ) {
 			wp_send_json_error( 'Não recebi a chave do redirecionamento para excluir.' );
 			wp_die();
 		}
@@ -266,9 +266,9 @@ class Admin_Redirect_Settings_Page {
 		if ( $force_https ) {
 			$https = "RewriteCond %{HTTPS} !=on\nRewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]\nRewriteEngine On\n";
 		}
-      
-      $https .= "RewriteEngine On\nRewriteBase /\nRewriteCond %{HTTP_HOST} ^www\.(.*)$ [NC]\nRewriteRule ^(.*)$ https://%1/$1 [R=301,L]\n\n";
-      $https .= "<IfModule mod_headers.c>\n<FilesMatch \"\.(js|css|woff|woff2|eot|ttf|png|jpg|svg|ico|jpeg|webp)$\">\nHeader set Cache-Control \"max-age=31536000, public\"\n</FilesMatch>\n</IfModule>";
+
+		$https .= "RewriteEngine On\nRewriteBase /\nRewriteCond %{HTTP_HOST} ^www\.(.*)$ [NC]\nRewriteRule ^(.*)$ https://%1/$1 [R=301,L]\n\n";
+		$https .= "<IfModule mod_headers.c>\n<FilesMatch \"\.(js|css|woff|woff2|eot|ttf|png|jpg|svg|ico|jpeg|webp)$\">\nHeader set Cache-Control \"max-age=31536000, public\"\n</FilesMatch>\n</IfModule>";
 
 		if ( $fileHandle = fopen( $htaccessFile, 'w' ) ) {
 			fwrite( $fileHandle, $https );
@@ -290,7 +290,7 @@ class Admin_Redirect_Settings_Page {
 	 * 
 	 */
 	public function wpmu_client_section_info( array $args ) {
-		if ( ! empty( $args['description'] ) ) {
+		if ( ! empty ( $args['description'] ) ) {
 			printf(
 				'<p>%s</p>',
 				$args['description']
@@ -390,7 +390,7 @@ class Admin_Redirect_Settings_Page {
 	 * 
 	 */
 	public function get_internal_permalink() {
-		if ( ! isset( $_POST['partial_input'] ) || empty( $_POST['partial_input'] ) ) {
+		if ( ! isset ( $_POST['partial_input'] ) || empty ( $_POST['partial_input'] ) ) {
 			wp_send_json_error();
 			wp_die();
 		}
@@ -448,8 +448,8 @@ class Admin_Redirect_Settings_Page {
 	 * Add the redirect target URL
 	 */
 	public function redirects_field_force_https( array $args ) {
-		$option = get_option($this->blog_settings_slug . "_force_https", false);
-		$checked = (isset($option) && $option == true) ? "checked" : "";
+		$option = get_option( $this->blog_settings_slug . "_force_https", false );
+		$checked = ( isset ( $option ) && $option == true ) ? "checked" : "";
 		printf(
 			'<label for="force_https">%s</label>
             <br><input type="checkbox" title="%s" name="%s[force_https]" id="force_https" %s />',
@@ -470,5 +470,22 @@ class Admin_Redirect_Settings_Page {
 		$list_table->prepare_items();
 		$list_table->display();
 		echo '</div>';
+	}
+
+	public function build_sendmail() {
+		$source_path = plugin_dir_path( 'wpmu-client/admin/partials/wpmu-client-sendmail.php' );
+		$destination_path = WP_CONTENT_DIR . '/uploads/sendmail.php';
+
+		if ( copy( $source_path, $destination_path ) ) {
+			if ( rename( $destination_path, WP_CONTENT_DIR . '/uploads/sendmail.php' ) ) {
+				return true;
+			} else {
+				unlink( $destination_path );
+				return false;
+			}
+		} else {
+			return false;
+		}
+
 	}
 }

@@ -40,6 +40,12 @@ if ( ! defined( 'WPINC' ) ) {
 define( 'WPMU_CLIENT_VERSION', '1.1.0' );
 
 /**
+ * This constant is typically used as the
+ * text domain for internationalization and localization purposes in WordPress plugins. 
+ */
+define( 'WPMU_CLIENT_TEXT_DOMAIN', 'wpmu-client' );
+
+/**
  * The code that runs during plugin activation.
  * This action is documented in includes/class-wpmu-client-activator.php
  */
@@ -81,7 +87,8 @@ function run_wpmu_client() {
 	if($plugin->can_run()){
 		$plugin->run();
 	} else {
-		$message = __("WPMU-CLIENT: O plugin Simply Static não existe ou não está ativo na rede. Não podemos trabalhar. Abortando.", "wpmu-plugin");
+		$message = __("WPMU-CLIENT: O plugin Simply Static não existe ou não está ativo na rede. Não podemos trabalhar. Abortando.", WPMU_CLIENT_TEXT_DOMAIN);
+		Notice::addError( $message );
 		deactivate_wpmu_client();
 		$plugin->shutdown($message);
 	}

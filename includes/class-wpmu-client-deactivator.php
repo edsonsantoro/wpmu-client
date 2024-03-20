@@ -31,7 +31,8 @@ class Deactivator {
 	 * @since    1.0.0
 	 */
 	public static function deactivate() {
-		
+		$message = __("Plugin desativado.", WPMU_CLIENT_TEXT_DOMAIN );
+		Notice::addInfo( $message );
 	}
 
 }

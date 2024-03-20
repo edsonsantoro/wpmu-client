@@ -3,52 +3,108 @@
 namespace Wpmu_Client;
 
 class Notice {
+	const TRANSIENT_NAME = 'wpmu_client_admin_notice_message';
+	const MESSAGE_DURATION = 300; // 5 minutos
 
-    /**
-     * The message of the notice
-     *
-     * @var string
-     */
-    private $_message = '';
 
-    /**
-     * The type of the message, can be error, info, warning or success
-     *
-     * @var string 
-     */
-    private $_type = 'info';
+	public function displayAdminNotice() {
+		$messages = get_transient( self::TRANSIENT_NAME );
 
-    /**
-     * If the notice can be dismissible or not.
-     *
-     * @var bool
-     */
-    private $_dismissible = true;
+		if ( $messages ) {
+			foreach ( $messages as $key => $message ) {
+				if ( ( time() - $message['displayed-at'] ) < $message['duration'] ) {
+					echo '<div class="notice ' . $message['notice-level'] . ' is-dismissible" data-displayed-at="' . $message['displayed-at'] . '" data-duration="' . $message['duration'] . '"><p>' . $message['message'] . '</p><button type="button" class="notice-dismiss"></button></div>';
+				} else {
+					unset( $messages[ $key ] );
+				}
 
-    /**
-     * [Description for __construct]
-     *
-     * @param string $message The message of the notice. Empty string my default.
-     * @param string $type The type of notice (error, info, warning or success). Info by default
-     * @param bool $dismissible If the message is dismissible or not. True by default
-     * @param bool $network True if the message is for network admins, false for site admins.
-     * 
-     */
-    function __construct( string $message = null, string $type = 'info', bool $dismissible = true, bool $network = false ) {
-        $this->_message = $message;
-        $this->_dismissible = $dismissible;
-        $this->_type = $type;
-        if($network) {
-            add_action( 'network_admin_notices', [$this, 'render'], 5 );    
-        } else {
-            add_action( 'admin_notices', [$this, 'render'], 5  );
-        }
+				if ( empty ( $messages ) ) {
+					delete_transient( self::TRANSIENT_NAME );
+				} else {
+					self::updateTransient( $messages );
+				}
+			}
+		}
+	}
+
+	public static function addError( string $message, int $duration = self::MESSAGE_DURATION ) {
+		if ( empty ( $message ) )
+			return;
+
+		$messages = self::getMessages();
+		$messages[] = array(
+			'message' => $message,
+			'notice-level' => 'notice-error',
+			'displayed-at' => time(),
+			'duration' => $duration
+		);
+
+		self::updateTransient( $messages );
+	}
+
+	public static function addWarning( string $message, int $duration = self::MESSAGE_DURATION ) {
+		if ( empty ( $message ) )
+			return;
+
+		$messages = self::getMessages();
+		$messages[] = array(
+			'message' => $message,
+			'notice-level' => 'notice-warning',
+			'displayed-at' => time(),
+			'duration' => $duration
+		);
+
+		self::updateTransient( $messages );
+	}
+
+	public static function addInfo( string $message, int $duration = self::MESSAGE_DURATION ) {
+		if ( empty ( $message ) )
+			return;
+
+		$messages = self::getMessages();
+		$messages[] = array(
+			'message' => $message,
+			'notice-level' => 'notice-info',
+			'displayed-at' => time(),
+			'duration' => $duration
+		);
+
+		self::updateTransient( $messages );
+	}
+
+
+	public static function getMessages() {
+		$messages = get_transient( self::TRANSIENT_NAME );
+
+		return $messages ? $messages : array();
+	}
+
+	protected static function updateTransient( $messages ) {
+		set_transient( self::TRANSIENT_NAME, $messages );
+	}
+
+	public function deleteTransient() {
+        $nonce = wp_create_nonce( 'wpmu_client_dismiss_message' );
         
-    }
+		$displayedAt = $_POST['displayedAt'];
 
-    function render() {
-        $dismiss = '';
-        if($this->_dismissible) $dismiss = 'is-dismissible';
-        echo '<div class="notice notice-'.$this->_type.' '.$dismiss.'"><p>'.$this->_message.'</p></div>';
-    }
+		$messages = get_transient( self::TRANSIENT_NAME );
+
+		if ( $messages && $displayedAt ) {
+			foreach ( $messages as $key => $message ) {
+				if ( $message['displayed-at'] == $displayedAt ) {
+					unset( $messages[ $key ] );
+					break;
+				}
+			}
+
+			if ( empty ( $messages ) ) {
+				delete_transient( self::TRANSIENT_NAME );
+			} else {
+				set_transient( self::TRANSIENT_NAME, $messages );
+			}
+		}
+
+		wp_send_json_success();
+	}
 }

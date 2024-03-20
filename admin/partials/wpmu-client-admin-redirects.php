@@ -257,12 +257,17 @@ class Admin_Redirect_Settings_Page {
 		$blog_settings_slug = $this->get_blog_settings_slug();
 
 		$https = '';
-		$directory = get_option( $this->blog_settings_slug . '_export_path' );
+		$directory = get_option( $blog_settings_slug . '_export_path', '' );
+
+		if ( empty ( $directory ) )
+			return;
+
 		$directory = realpath( $directory );
 		$htaccessFile = $directory . "/.htaccess";
 
 		$redirects = get_option( $blog_settings_slug . "_redirects", [] );
 		$force_https = get_option( $blog_settings_slug . "_force_https", false );
+		
 		if ( $force_https ) {
 			$https = "RewriteCond %{HTTPS} !=on\nRewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]\nRewriteEngine On\n";
 		}

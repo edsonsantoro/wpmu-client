@@ -126,7 +126,7 @@ class Network_Tab_Page
         );
 
         add_settings_field(
-            "client",
+            "client_email",
             __('Email para formulários', $this->plugin_name),
             [$this, "client_email_callback"],
             $this->blog_settings_slug . "-tab",

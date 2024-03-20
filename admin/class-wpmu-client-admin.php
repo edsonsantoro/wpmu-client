@@ -331,7 +331,7 @@ class Admin_Functions
 	 */
 	public function replace_strings(string $status, string $directory = '', string $search = '', string $replace = '', array $allowedExtensions = ['html', 'css', 'js'])
 	{
-		error_log($status);
+
 		if($status != "success") {
 			return;
 		}

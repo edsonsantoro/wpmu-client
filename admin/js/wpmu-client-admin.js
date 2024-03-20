@@ -25,6 +25,37 @@
       export_box.text(lastLog);
       export_box.scrollTop(export_box.prop('scrollHeight'));    
     }
+
+    jQuery('.notice.is-dismissible .notice-dismiss').on('click', function () {
+      var notice = $(this).closest('.notice'); 
+      var data = {
+        action: 'wp_ajax_wpmu_client_dismiss_message',
+        displayedAt: $(this).closest('.notice').data('displayed-at')
+      };
+  
+      jQuery.ajax({
+        url: ajaxurl,
+        type: 'post',
+        data: data,
+        success: function (res) {         
+          notice.remove();
+        }
+      });
+    });
+
+    // Verificar expiração a cada segundo
+    setInterval(function() {
+      jQuery('.notice.is-dismissible').each(function() {
+        var message = jQuery(this);
+        var displayedAt = message.data('displayed-at');
+        var duration = message.data('duration');
+        var currentTime = Math.floor(Date.now() / 1000);
+  
+        if (currentTime - displayedAt >= duration) {
+          message.remove();
+        }
+      });
+    }, 1000);
     
     // Delay keyup function
     function delay(callback, ms) {

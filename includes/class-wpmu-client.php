@@ -256,7 +256,10 @@ class Wpmu_Client
 		$redirects_page = new Admin_Redirect_Settings_Page($plugin_name, $network_settings_slug, $blog_settings_slug);
 		$network_admin_page = new Network_Settings_Page($plugin_name, $version, $network_settings_slug, $blog_settings_slug);
 		$network_tab_page = new Network_Tab_Page($plugin_name, $version, $network_settings_slug, $blog_settings_slug);
+		$messages = new Notice();
 
+		$this->loader->add_action( 'admin_notices', $messages, 'displayAdminNotice', 10 );
+		$this->loader->add_action( 'wp_ajax_wpdocs_dismiss_message', $messages, 'deleteTransient', );
 
 		// ---------------- Network Settings Page actions and filters ----------------
 		// Add our network plugin menu item
@@ -288,7 +291,7 @@ class Wpmu_Client
 
 		
 		// ---------------- Site Redirect Page actions and filters ----------------
-		
+
 		// Add this page to the menu
 		$this->loader->add_action('admin_menu', $redirects_page, 'wpmu_client_add_plugin_page');
 		// Initialize the redirects page

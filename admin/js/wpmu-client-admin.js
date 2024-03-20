@@ -178,7 +178,9 @@
         jQuery.post(ajaxurl, data, function (response) {
           if (response.success === false) {
             console.log(response);
-            alert("Erro ao obter o status do processo de envio ao servidor cliente.");
+            button.attr('disabled', false);
+            button.val('Iniciar Envio');
+            export_box.text(response.data);
           } else {
             if (response.data.status == "finished") {
               export_box.append("\n Envio finalizado com sucesso.");

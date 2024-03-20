@@ -169,7 +169,7 @@ class Admin_Functions {
 		foreach ( $updated as $key => $status ) {
 			if ( ! $status ) {
 				$notice = __( "Erro ao atualizar a opção " . $key . " no banco de dados. Por favor, Verifique!", $this->plugin_name );
-				Notice::addError( $notice, 60);
+				Notice::addError( $notice, 60 );
 				error_log( $notice );
 				wp_mail( wp_get_current_user()->data->user_email, "WPMU-Client", $notice );
 			}
@@ -392,7 +392,7 @@ class Admin_Functions {
 		if ( ! isset ( $_POST['schedule_id'] ) ) {
 
 			if ( ! isset ( $_POST['blog_id'] ) || ! isset ( $_POST['timestamp'] ) || ! isset ( $_POST['reference'] ) ) {
-				Notice::addError( "Não recebemos todos os parâmetros para consulta. Função 'check_export_status', class-wpmu-client-admin.php linha " . __LINE__ , 60);
+				Notice::addError( "Não recebemos todos os parâmetros para consulta. Função 'check_export_status', class-wpmu-client-admin.php linha " . __LINE__, 60 );
 				error_log( "Não recebemos todos os parâmetros para consulta. Função 'check_export_status', class-wpmu-client-admin.php linha " . __LINE__ );
 				wp_send_json_error( 'Não recebemos todos os parâmetros para consulta' );
 				return;
@@ -641,7 +641,7 @@ class Admin_Functions {
 		if ( ! $can_create_dir ) {
 			$message = 'O plugin WPMU-Client não tem permissão para escrever novos diretórios. Verifique seu servidor.';
 			error_log( $message );
-			Notice::addError( $message , 60);
+			Notice::addError( $message, 60 );
 			wp_mail( wp_get_current_user()->data->user_email, "WPMU-Client", $message );
 			return;
 		}
@@ -798,6 +798,7 @@ class Admin_Functions {
 			$reference = new DateTime( $timestamp );
 			$reference = $reference->format( 'j-M-Y-H\h-i\m-s\s' );
 
+			self::pre_export_check( $blog_id );
 
 			$async_request_lock_expiration = ActionScheduler::lock()->get_expiration( 'async-request-runner' );
 			$expiration = $async_request_lock_expiration - time();
@@ -806,6 +807,57 @@ class Admin_Functions {
 			wp_send_json_success( $result, 200 );
 		}
 		wp_send_json_success( [ "message" => "Export já na fila, aguarde..." ] );
+	}
+
+	public function pre_export_check( int $blog_id ) {
+		$site = get_site( $blog_id );
+		if ( $site == null ) {
+			// The blog does not exist, log and abort
+			$notice = __( "WPMU-CLIENT: Erro na função wpmu_init_export, blog_id inválido", $this->plugin_name );
+			error_log( $notice );
+			Notice::addError( $notice );
+			wp_send_json_error( $notice );
+		}
+
+		$blog_settings_slug = $this->blog_settings_slug;
+
+		// Get ftp credentials, client name, and export path
+		$client = get_blog_option( $blog_id, $blog_settings_slug . "_client", false );
+		$ftp_host = get_blog_option( $blog_id, $blog_settings_slug . "_ftp_host", false );
+		$ftp_user = get_blog_option( $blog_id, $blog_settings_slug . "_ftp_user", "anonymous" );
+		$ftp_pass = ( false != get_blog_option( $blog_id, $blog_settings_slug . "_ftp_pass" ) ) ? ',"' . get_blog_option( $blog_id, $blog_settings_slug . "_ftp_pass" ) . '" ' : ' '; // Do not remove whitespaces
+		$ftp_port = ( false != get_blog_option( $blog_id, $blog_settings_slug . "_ftp_port" ) ) ? '-p ' . get_blog_option( $blog_id, $blog_settings_slug . "_ftp_port" ) . ' ' : '-p 21 '; // Do not remove whitespaces
+		$ftp_path = ( false != get_blog_option( $blog_id, $blog_settings_slug . "_ftp_path" ) ) ? get_blog_option( $blog_id, $blog_settings_slug . "_ftp_path" ) : './';
+		$ftp_sync_new_only = ( false != get_blog_option( $blog_id, $blog_settings_slug . "_ftp_sync_new_only" ) ) ? "-n " : "";
+		$export_path = get_blog_option( $blog_id, $blog_settings_slug . "_export_path", false );
+
+		// If no FTP credentials, abort
+		if ( empty($ftp_host) ) {
+			$notice = $this->plugin_name . ": Credenciais de FTP não registrados. Abortando.";
+			error_log( $notice );
+			Notice::addError( $notice );
+			wp_mail( wp_get_current_user()->data->user_email, "WPMU-Client", $notice );
+			wp_send_json_error( $notice );
+		}
+
+		// If no client name, abort
+		if ( empty($client) ) {
+			$notice = "WPMU-CLIENT: Nome de cliente não definido. Abortando.";
+			error_log( $notice );
+			Notice::addError( $notice );
+			wp_mail( wp_get_current_user()->data->user_email, "WPMU-Client", $notice );
+			wp_send_json_error( $notice );
+		}
+
+		// If no export path, abort
+		if ( empty ( $export_path ) ) {
+			$notice = "WPMU-CLIENT: Caminho de exportação não definido. Abortando.";
+			error_log( $notice );
+			Notice::addError( $notice );
+			wp_mail( wp_get_current_user()->data->user_email, "WPMU-Client", $notice );
+			wp_send_json_error( $notice );
+		}
+
 	}
 
 	/**
@@ -888,7 +940,7 @@ class Admin_Functions {
 		}
 
 		if ( ! is_writable( $export_path . '/logs' ) ) {
-			Notice::addError( "Não foi possível criar a pasta de logs" , 30);
+			Notice::addError( "Não foi possível criar a pasta de logs", 30 );
 			error_log( 'nao posso gravar' );
 		}
 

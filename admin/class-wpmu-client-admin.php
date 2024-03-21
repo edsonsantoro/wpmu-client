@@ -9,6 +9,7 @@ use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use WP_Admin_Bar;
 use WP_Site;
+use WP_Error;
 use Wpmu_Client\Notice;
 
 require_once ( __DIR__ . '/class-wpmu-client-admin-notices.php' );
@@ -479,7 +480,7 @@ class Admin_Functions {
 	 * @param array $data Associative array of complete site data.
 	 * @param mixed $old_site The old site object if the data belongs to a site being updated, or null if it is a new site being inserted. Defaults to null
 	 */
-	public function check_new_blog_fields( WP_Error $errors, array $data, $old_site ) {
+	public function check_new_blog_fields( \WP_Error $errors, array $data, $old_site ) {
 		if ( empty ( $_POST['blog']['client'] ) ) {
 			$errors->add( 'site_empty_client', __( "O campo de cliente não pode estar vazio", $this->plugin_name ) );
 		}

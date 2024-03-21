@@ -483,15 +483,11 @@ class Admin_Redirect_Settings_Page {
 		$source_path = plugin_dir_path( __FILE__ ) . 'wpmu-client-sendmail.php';
 		$export_path = get_option( $this->get_blog_settings_slug() . '_export_path', '' );
 
-		Notice::addInfo( "Caminho: " . $source_path, 60);
-
 		if ( empty ( $export_path ) ) {
 			Notice::addError( "Script de sendmail.php não foi copiado para os arquivos estáticos por o caminho de exportação do site não foi definido.\n
 							Certifique-se de que o caminho de exportação global está definido nas <a href='site_url()/wp-admin/network/settings.php?page=wpmu_client_network_settings-page'>configurações globais do plugin</a> e que o <a href='site_url()/wp-admin/network/sites.php?page=genpage&id=get_current_blog_id()'>nome do cliente está definido.</a>" );
 			return;
 		}
-
-		Notice::addInfo( "Export: " . $export_path, 60);
 
 		$destination_path = $export_path . '/wpmu-client-sendmail.php';
 		

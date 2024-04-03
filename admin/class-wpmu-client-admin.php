@@ -889,7 +889,7 @@ class Admin_Functions {
 		$ftp_pass = ( false != get_blog_option( $blog_id, $blog_settings_slug . "_ftp_pass" ) ) ? ',"' . get_blog_option( $blog_id, $blog_settings_slug . "_ftp_pass" ) . '" ' : ' '; // Do not remove whitespaces
 		$ftp_port = ( false != get_blog_option( $blog_id, $blog_settings_slug . "_ftp_port" ) ) ? '-p ' . get_blog_option( $blog_id, $blog_settings_slug . "_ftp_port" ) . ' ' : '-p 21 '; // Do not remove whitespaces
 		$ftp_path = ( false != get_blog_option( $blog_id, $blog_settings_slug . "_ftp_path" ) ) ? get_blog_option( $blog_id, $blog_settings_slug . "_ftp_path" ) : './';
-		$ftp_sync_new_only = ( false != get_blog_option( $blog_id, $blog_settings_slug . "_ftp_sync_new_only" ) ) ? "-n " : "";
+		$ftp_sync_new_only = ( false != get_blog_option( $blog_id, $blog_settings_slug . "_ftp_sync_new_only" ) ) ? "-n " : "--transfer-all";
 		$export_path = get_blog_option( $blog_id, $blog_settings_slug . "_export_path", false );
 
 		// If no FTP credentials, abort
@@ -949,7 +949,7 @@ class Admin_Functions {
 		$xfer_log_path = $export_path . '/logs/transfer-xfer-' . $reference . '.log';
 
 		// Lets build the command argument
-		$cmd = 'lftp -u "' . $ftp_user . '"' . $ftp_pass . $ftp_port . $ftp_host . ' -e "set ftp:ssl-allow no;set log:enabled yes;set log:show-time yes;set log:file ' . $xfer_log_path . ';mirror --exclude=logs/ --transfer-all -P 5 -v ' . $ftp_sync_new_only . '-R ' . $export_path . '/ ' . $ftp_path . ';exit;" > ' . $log_path;
+		$cmd = 'lftp -u "' . $ftp_user . '"' . $ftp_pass . $ftp_port . $ftp_host . ' -e "set ftp:ssl-allow no;set log:enabled yes;set log:show-time yes;set log:file ' . $xfer_log_path . ';mirror --exclude=logs/ -P 5 -v ' . $ftp_sync_new_only . '-R ' . $export_path . '/ ' . $ftp_path . ';exit;" > ' . $log_path;
 
 		exec( $cmd );
 		return true;

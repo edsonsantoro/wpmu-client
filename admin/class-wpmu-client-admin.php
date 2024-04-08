@@ -172,7 +172,6 @@ class Admin_Functions {
 				$notice = __( "Erro ao atualizar a opção " . $key . " no banco de dados. Por favor, Verifique!", $this->plugin_name );
 				Notice::addError( $notice, 60 );
 				error_log( $notice );
-				wp_mail( wp_get_current_user()->data->user_email, "WPMU-Client", $notice );
 			}
 		}
 
@@ -318,6 +317,7 @@ class Admin_Functions {
 	public function replace_strings( string $status, string $directory = '', string $search = '', string $replace = '', array $allowedExtensions = [ 'html', 'css', 'js' ] ) {
 
 		if ( $status != "success" ) {
+			Notice::addWarning( __( "A exportação não ocorreu bem. Não fizemos nenhuma substituição de strings.", WPMU_CLIENT_TEXT_DOMAIN ), 30 );
 			return;
 		}
 
@@ -643,7 +643,6 @@ class Admin_Functions {
 			$message = 'O plugin WPMU-Client não tem permissão para escrever novos diretórios. Verifique seu servidor.';
 			error_log( $message );
 			Notice::addError( $message, 60 );
-			wp_mail( wp_get_current_user()->data->user_email, "WPMU-Client", $message );
 			return;
 		}
 
@@ -679,7 +678,6 @@ class Admin_Functions {
 			$message = 'O plugin WPMU-Client não conseguiu definir uma opção do blog. Verifique o código.';
 			error_log( $message );
 			Notice::addError( $message );
-			wp_mail( wp_get_current_user()->data->user_email, "WPMU-Client", $message );
 			return false;
 		}
 
@@ -837,7 +835,6 @@ class Admin_Functions {
 			$notice = $this->plugin_name . ": Credenciais de FTP não registrados. Abortando.";
 			error_log( $notice );
 			Notice::addError( $notice );
-			wp_mail( wp_get_current_user()->data->user_email, "WPMU-Client", $notice );
 			wp_send_json_error( $notice );
 		}
 
@@ -846,7 +843,6 @@ class Admin_Functions {
 			$notice = "WPMU-CLIENT: Nome de cliente não definido. Abortando.";
 			error_log( $notice );
 			Notice::addError( $notice );
-			wp_mail( wp_get_current_user()->data->user_email, "WPMU-Client", $notice );
 			wp_send_json_error( $notice );
 		}
 
@@ -855,7 +851,6 @@ class Admin_Functions {
 			$notice = "WPMU-CLIENT: Caminho de exportação não definido. Abortando.";
 			error_log( $notice );
 			Notice::addError( $notice );
-			wp_mail( wp_get_current_user()->data->user_email, "WPMU-Client", $notice );
 			wp_send_json_error( $notice );
 		}
 
@@ -897,7 +892,6 @@ class Admin_Functions {
 			$notice = $this->plugin_name . ": Credenciais de FTP não registrados. Abortando.";
 			error_log( $notice );
 			Notice::addError( $notice );
-			wp_mail( wp_get_current_user()->data->user_email, "WPMU-Client", $notice );
 			return false;
 		}
 
@@ -906,7 +900,6 @@ class Admin_Functions {
 			$notice = "WPMU-CLIENT: Nome de cliente não definido. Abortando.";
 			error_log( $notice );
 			Notice::addError( $notice );
-			wp_mail( wp_get_current_user()->data->user_email, "WPMU-Client", $notice );
 			return false;
 		}
 
@@ -915,7 +908,6 @@ class Admin_Functions {
 			$notice = "WPMU-CLIENT: Caminho de exportação não definido. Abortando.";
 			error_log( $notice );
 			Notice::addError( $notice );
-			wp_mail( wp_get_current_user()->data->user_email, "WPMU-Client", $notice );
 			return false;
 		}
 
@@ -929,7 +921,6 @@ class Admin_Functions {
 			$notice = $this->plugin_name . ": Erro: O sistema não contém o comando LFTP. Abortando.";
 			error_log( $notice );
 			Notice::addError( $notice );
-			wp_mail( wp_get_current_user()->data->user_email, "WPMU-Client", $notice );
 			return false;
 		}
 
@@ -1075,7 +1066,6 @@ class Admin_Functions {
 			$message = __( "Caminho não definido.", $this->plugin_name );
 			error_log( $message );
 			Notice::addError( $message );
-			wp_mail( wp_get_current_user()->data->user_email, "WPMU-Client", $message );
 			return false;
 		}
 
@@ -1107,7 +1097,6 @@ class Admin_Functions {
 			$message = __( "Função has_right precisa de um caminho e um cliente.", $this->plugin_name );
 			error_log( $message );
 			Notice::addError( $message );
-			wp_mail( wp_get_current_user()->data->user_email, "WPMU-Client", $message );
 			return false;
 		}
 
@@ -1127,7 +1116,6 @@ class Admin_Functions {
 			$message = __( "Função check_dir_exists precisa de um caminho e um cliente.", $this->plugin_name );
 			error_log( $message );
 			Notice::addError( $message );
-			wp_mail( wp_get_current_user()->data->user_email, "WPMU-Client", $message );
 			return false;
 		}
 

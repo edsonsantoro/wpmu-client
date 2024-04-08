@@ -250,28 +250,23 @@ class Admin_Redirect_Settings_Page {
 	 * @return void
 	 * 
 	 */
-	public function build_htaccess( string $status ) {
-		if ( $status != "success" ) {
+	public function build_htaccess(string $status) {
+		// If status is not "success", exit function
+		if ($status !== "success") {
 			return;
 		}
-
+		
+		// Get blog settings slug
 		$blog_settings_slug = $this->get_blog_settings_slug();
-
-		$https = '';
-		$directory = get_option( $blog_settings_slug . '_export_path', '' );
-
-		if ( empty ( $directory ) )
-			return;
-
-		$directory = realpath( $directory );
-		$htaccessFile = $directory . "/.htaccess";
-
-		$redirects = get_option( $blog_settings_slug . "_redirects", [] );
-		$force_https = get_option( $blog_settings_slug . "_force_https", false );
-
-		if ( $force_https ) {
-			$https = "RewriteCond %{HTTPS} !=on\nRewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]\nRewriteEngine On\n";
+		
+		// Get export directory
+		$export_path = get_option($blog_settings_slug . '_export_path', '');
+		
+		// If export directory is empty, exit function
+		if (empty($export_path)) {
+		return;
 		}
+<<<<<<< HEAD
 <<<<<<< HEAD
       
       $https .= "RewriteEngine On\nRewriteCond %{HTTP_HOST} ^www\.(.*)$ [NC]\nRewriteRule ^(.*)$ https://%1/$1 [R=301,L]\n";
@@ -289,8 +284,51 @@ class Admin_Redirect_Settings_Page {
 				fwrite( $fileHandle, $redirectRule );
 			}
 			fclose( $fileHandle );
+=======
+		
+		// Resolve export directory path
+		$export_path = realpath($export_path);
+		$htaccess_file = $export_path . "/.htaccess";
+		
+		// Get redirects and force HTTPS option
+		$redirects = get_option($blog_settings_slug . "_redirects", []);
+		$force_https = get_option($blog_settings_slug . "_force_https", false);
+		
+		// Initialize HTTPS rules
+		$https_rules = '';
+		
+		// Add HTTPS redirection rule if force HTTPS is enabled
+		if ($force_https) {
+			$https_rules .= "RewriteCond %{HTTPS} !=on\n";
+			$https_rules .= "RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]\n";
+			$https_rules .= "RewriteEngine On\n";
+		}
+		
+		// Add www to non-www redirection rule
+		$https_rules .= "RewriteEngine On\n";
+		$https_rules .= "RewriteBase /\n";
+		$https_rules .= "RewriteCond %{HTTP_HOST} ^www\.(.*)$ [NC]\n";
+		$https_rules .= "RewriteRule ^(.*)$ https://%1/$1 [R=301,L]\n\n";
+		
+		// Add cache control headers for certain file types
+		$https_rules .= "<IfModule mod_headers.c>\n";
+		$https_rules .= "<FilesMatch \"\.(js|css|woff|woff2|eot|ttf|png|jpg|svg|ico|jpeg|webp)$\">\n";
+		$https_rules .= "Header set Cache-Control \"max-age=31536000, public\"\n";
+		$https_rules .= "</FilesMatch>\n";
+		$https_rules .= "</IfModule>";
+		
+		// Write rules to .htaccess file
+		if ($file_handle = fopen($htaccess_file, 'w')) {
+		fwrite($file_handle, $https_rules);
+		foreach ($redirects as $source => $destination) {
+		    $redirect_rule = "Redirect 301 $source $destination\n";
+		    fwrite($file_handle, $redirect_rule);
+		}
+		fclose($file_handle);
+>>>>>>> 148ca0d51832dfbcff29750648875455b827b268
 		}
 	}
+
 
 
 	/**
@@ -489,15 +527,11 @@ class Admin_Redirect_Settings_Page {
 		$source_path = plugin_dir_path( __FILE__ ) . 'wpmu-client-sendmail.php';
 		$export_path = get_option( $this->get_blog_settings_slug() . '_export_path', '' );
 
-		Notice::addInfo( "Caminho: " . $source_path, 60);
-
 		if ( empty ( $export_path ) ) {
 			Notice::addError( "Script de sendmail.php não foi copiado para os arquivos estáticos por o caminho de exportação do site não foi definido.\n
 							Certifique-se de que o caminho de exportação global está definido nas <a href='site_url()/wp-admin/network/settings.php?page=wpmu_client_network_settings-page'>configurações globais do plugin</a> e que o <a href='site_url()/wp-admin/network/sites.php?page=genpage&id=get_current_blog_id()'>nome do cliente está definido.</a>" );
 			return;
 		}
-
-		Notice::addInfo( "Export: " . $export_path, 60);
 
 		$destination_path = $export_path . '/wpmu-client-sendmail.php';
 		

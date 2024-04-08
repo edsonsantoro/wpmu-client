@@ -48,7 +48,7 @@ class Admin_Redirect_Settings_Page {
 	 * 
 	 */
 	public function __construct( string $plugin_name, string $network_settings_slug, string $blog_settings_slug ) {
-		if ( empty ( $plugin_name ) || empty ( $network_settings_slug ) || empty ( $blog_settings_slug ) )
+		if ( empty( $plugin_name ) || empty( $network_settings_slug ) || empty( $blog_settings_slug ) )
 			return;
 
 		$this->set_plugin_name( $plugin_name );
@@ -175,13 +175,13 @@ class Admin_Redirect_Settings_Page {
 	public function save_redirects() {
 		$blog_settings_slug = $this->get_blog_settings_slug();
 
-		$source_url = ( isset ( $_POST['source_url'] ) ) ? sanitize_text_field( $_POST['source_url'] ) : '';
-		$target_url = ( isset ( $_POST['target_url'] ) ) ? sanitize_text_field( $_POST['target_url'] ) : '';
-		$force_https = ( isset ( $_POST['force_https'] ) && "true" == $_POST['force_https'] ) ? true : false;
+		$source_url = ( isset( $_POST['source_url'] ) ) ? sanitize_text_field( $_POST['source_url'] ) : '';
+		$target_url = ( isset( $_POST['target_url'] ) ) ? sanitize_text_field( $_POST['target_url'] ) : '';
+		$force_https = ( isset( $_POST['force_https'] ) && "true" == $_POST['force_https'] ) ? true : false;
 
 		$updated = update_option( $blog_settings_slug . "_force_https", $force_https );
 
-		if ( ! empty ( $source_url ) && ! empty ( $target_url ) ) {
+		if ( ! empty( $source_url ) && ! empty( $target_url ) ) {
 
 			$existing = get_option( $blog_settings_slug . "_redirects", [] );
 			$existing[ $source_url ] = $target_url;
@@ -209,7 +209,7 @@ class Admin_Redirect_Settings_Page {
 	public function delete_redirect() {
 		$blog_settings_url = $this->get_blog_settings_slug();
 
-		if ( ! isset ( $_POST['source_url'] ) || ! isset ( $_POST['target_url'] ) ) {
+		if ( ! isset( $_POST['source_url'] ) || ! isset( $_POST['target_url'] ) ) {
 			wp_send_json_error( 'Não recebi a chave do redirecionamento para excluir.' );
 			wp_die();
 		}
@@ -250,9 +250,10 @@ class Admin_Redirect_Settings_Page {
 	 * @return void
 	 * 
 	 */
-	public function build_htaccess(string $status) {
+	public function build_htaccess( string $status ) {
 		// If status is not "success", exit function
-		if ($status !== "success") {
+		if ( $status !== "success" ) {
+			Notice::addError( __( "Exportação não ocorreu bem. Novo .htaccess não foi gerado.", WPMU_CLIENT_TEXT_DOMAIN ), 30 );
 			return;
 		}
 
@@ -260,26 +261,27 @@ class Admin_Redirect_Settings_Page {
 		$blog_settings_slug = $this->get_blog_settings_slug();
 
 		// Get export directory
-		$export_path = get_option($blog_settings_slug . '_export_path', '');
+		$export_path = get_option( $blog_settings_slug . '_export_path', '' );
 
-		// If export directory is empty, exit function
-		if (empty($export_path)) {
-		return;
+		// If export directory path string is empty, exit function
+		if ( empty( $export_path ) ) {
+			Notice::addError( __( "A opção 'wpmu_client_blog_settings_export_path' não está definida. Abortando.", WPMU_CLIENT_TEXT_DOMAIN ), 30 );
+			return;
 		}
 
 		// Resolve export directory path
-		$export_path = realpath($export_path);
+		$export_path = realpath( $export_path );
 		$htaccess_file = $export_path . "/.htaccess";
 
 		// Get redirects and force HTTPS option
-		$redirects = get_option($blog_settings_slug . "_redirects", []);
-		$force_https = get_option($blog_settings_slug . "_force_https", false);
+		$redirects = get_option( $blog_settings_slug . "_redirects", [] );
+		$force_https = get_option( $blog_settings_slug . "_force_https", false );
 
 		// Initialize HTTPS rules
 		$https_rules = '';
 
 		// Add HTTPS redirection rule if force HTTPS is enabled
-		if ($force_https) {
+		if ( $force_https ) {
 			$https_rules .= "RewriteCond %{HTTPS} !=on\n";
 			$https_rules .= "RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]\n";
 			$https_rules .= "RewriteEngine On\n";
@@ -299,13 +301,13 @@ class Admin_Redirect_Settings_Page {
 		$https_rules .= "</IfModule>";
 
 		// Write rules to .htaccess file
-		if ($file_handle = fopen($htaccess_file, 'w')) {
-		fwrite($file_handle, $https_rules);
-		foreach ($redirects as $source => $destination) {
-		    $redirect_rule = "Redirect 301 $source $destination\n";
-		    fwrite($file_handle, $redirect_rule);
-		}
-		fclose($file_handle);
+		if ( $file_handle = fopen( $htaccess_file, 'w' ) ) {
+			fwrite( $file_handle, $https_rules );
+			foreach ( $redirects as $source => $destination ) {
+				$redirect_rule = "Redirect 301 $source $destination\n";
+				fwrite( $file_handle, $redirect_rule );
+			}
+			fclose( $file_handle );
 		}
 	}
 
@@ -320,7 +322,7 @@ class Admin_Redirect_Settings_Page {
 	 * 
 	 */
 	public function wpmu_client_section_info( array $args ) {
-		if ( ! empty ( $args['description'] ) ) {
+		if ( ! empty( $args['description'] ) ) {
 			printf(
 				'<p>%s</p>',
 				$args['description']
@@ -420,7 +422,7 @@ class Admin_Redirect_Settings_Page {
 	 * 
 	 */
 	public function get_internal_permalink() {
-		if ( ! isset ( $_POST['partial_input'] ) || empty ( $_POST['partial_input'] ) ) {
+		if ( ! isset( $_POST['partial_input'] ) || empty( $_POST['partial_input'] ) ) {
 			wp_send_json_error();
 			wp_die();
 		}
@@ -479,7 +481,7 @@ class Admin_Redirect_Settings_Page {
 	 */
 	public function redirects_field_force_https( array $args ) {
 		$option = get_option( $this->blog_settings_slug . "_force_https", false );
-		$checked = ( isset ( $option ) && $option == true ) ? "checked" : "";
+		$checked = ( isset( $option ) && $option == true ) ? "checked" : "";
 		printf(
 			'<label for="force_https">%s</label>
             <br><input type="checkbox" title="%s" name="%s[force_https]" id="force_https" %s />',
@@ -507,14 +509,14 @@ class Admin_Redirect_Settings_Page {
 		$source_path = plugin_dir_path( __FILE__ ) . 'wpmu-client-sendmail.php';
 		$export_path = get_option( $this->get_blog_settings_slug() . '_export_path', '' );
 
-		if ( empty ( $export_path ) ) {
+		if ( empty( $export_path ) ) {
 			Notice::addError( "Script de sendmail.php não foi copiado para os arquivos estáticos por o caminho de exportação do site não foi definido.\n
 							Certifique-se de que o caminho de exportação global está definido nas <a href='site_url()/wp-admin/network/settings.php?page=wpmu_client_network_settings-page'>configurações globais do plugin</a> e que o <a href='site_url()/wp-admin/network/sites.php?page=genpage&id=get_current_blog_id()'>nome do cliente está definido.</a>" );
 			return;
 		}
 
 		$destination_path = $export_path . '/wpmu-client-sendmail.php';
-		
+
 		if ( copy( $source_path, $destination_path ) ) {
 			if ( rename( $destination_path, $export_path . '/sendmail.php' ) ) {
 				return true;

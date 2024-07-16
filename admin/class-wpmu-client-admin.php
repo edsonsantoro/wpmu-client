@@ -1149,4 +1149,134 @@ class Admin_Functions {
 
 		$wp_admin_bar->add_node( $args );
 	}
+
+
+	/**
+	 * The function `generate_gen_forms_config` generates a configuration file for the Gen Forms plugin
+	 * based on certain conditions and settings.
+	 * 
+	 * @param string $status status of the static site generation
+	 * 
+	 * @return void
+	 */
+	public function generate_gen_forms_config( string $status ) {
+
+		// If status is not "success", exit function
+		if ( $status !== "success" ) {
+			Notice::addError( __( "Exportação não ocorreu bem. Nova config de Gen Forms não foi gerado.", WPMU_CLIENT_TEXT_DOMAIN ), 30 );
+			return;
+		}
+		
+		// Check if function from another plugin is available
+		if( !function_exists('gen_form_render_submit') ) {
+			$message = __( "Parece que o plugin Gen Forms não está ativo ou a função gen_form_render_submit não está disponível.", $this->plugin_name );
+			error_log( $message );
+			Notice::addError( $message );
+			return;
+		}
+
+		// Get blog settings slug
+		$blog_settings_slug = $this->blog_settings_slug;
+
+		// Get export directory
+		$export_path = get_option( $blog_settings_slug . '_export_path', '' );
+
+		// If export directory path string is empty, exit function
+		if ( empty( $export_path ) ) {
+			Notice::addError( __( "A opção 'wpmu_client_blog_settings_export_path' não está definida. Abortando.", WPMU_CLIENT_TEXT_DOMAIN ), 30 );
+			return;
+		}
+
+		// Resolve export directory path
+		$export_path = realpath( $export_path );
+
+		// Handle not a real path
+		if( $export_path === false) {
+			Notice::addError( __( "O caminho definido em 'wpmu_client_blog_settings_export_path' não existe ou está incorreto. Abortando cópia de arquivos Gen Forms.", WPMU_CLIENT_TEXT_DOMAIN ), 30 );
+			return;	
+		}
+		
+		$config_file = $export_path . "/gen_forms_submit/config.php";
+
+		// Initialize config contents
+		$content = gen_form_render_submit();
+
+		// Write contents to config.php file
+		if ( $file_handle = fopen( $config_file, 'w' ) ) {
+			fwrite( $file_handle, $content );
+			fclose( $file_handle );
+		} else {
+			$message = __( "Houve um erro ao tentar gravar o arquivo config.php para o plugin Gen Forms.", $this->plugin_name );
+			error_log( $message );
+			Notice::addError( $message );
+			return;
+		}
+		
+	}
+
+	/**
+	 * The `copy_gen_forms_files` function is designed to copy specific files from
+	 * the Gen Forms plugin directory to an export directory based on the provided status parameter. The
+	 * status parameter is a string that indicates the result of a previous operation from Simply Static.
+	 * 
+	 * @param string $status The Simply Static export status string
+	 * 
+	 * @return void The function `copy_gen_forms_files` is returning nothing (`null`) in case any of the
+	 * conditions are met and the function exits early. If all conditions pass successfully and the file
+	 * copies are successful, the function does not explicitly return anything.
+	 */
+	public function copy_gen_forms_files( string $status ) {
+
+		// If status is not "success", exit function
+		if ( $status !== "success" ) {
+			Notice::addError( __( "Exportação não ocorreu bem. Nova config de Gen Forms não foi gerado.", WPMU_CLIENT_TEXT_DOMAIN ), 30 );
+			return;
+		}		
+
+		// Get blog settings slug
+		$blog_settings_slug = $this->blog_settings_slug;
+
+		// Get export directory
+		$export_path = get_option( $blog_settings_slug . '_export_path', '' );
+
+		// If export directory path string is empty, exit function
+		if ( empty( $export_path ) ) {
+			Notice::addError( __( "A opção 'wpmu_client_blog_settings_export_path' não está definida. Abortando.", WPMU_CLIENT_TEXT_DOMAIN ), 30 );
+			return;
+		}
+
+		// Resolve export directory path
+		$export_path = realpath( $export_path );
+
+		if( $export_path === false) {
+			Notice::addError( __( "O caminho definido em 'wpmu_client_blog_settings_export_path' não existe ou está incorreto. Abortando cópia de arquivos Gen Forms.", WPMU_CLIENT_TEXT_DOMAIN ), 30 );
+			return;	
+		}
+
+		// Gen Forms submit folder
+		$forms_folder = WP_PLUGIN_DIR . '/gen_forms/gen_forms_submit/'; 
+		
+		// Check if folder gen forms submit exists
+		if( !is_dir( $forms_folder ) ) {
+			Notice::addError( __( "Parece que não existem formulários para serem copiados para o estático. Operação abortada.", WPMU_CLIENT_TEXT_DOMAIN ), 30 );
+			return;
+		}
+
+		$copied = [
+			'index' => copy( $forms_folder . 'index.php', $export_path . '/gen_forms_submit/index.php' );
+			'PHPMailer' => copy( $forms_folder . 'PHPMailer.php', $export_path . '/gen_forms_submit/PHPMailer.php' );
+			'SMTP' => copy( $forms_folder . 'SMTP.php', $export_path . '/gen_forms_submit/SMTP.php' );
+			'submit' => copy( $forms_folder . 'submit.php', $export_path . '/gen_forms_submit/submit.php' );
+			'config' => copy( $forms_folder . 'config.php', $export_path . '/gen_forms_submit/config.php' );
+		];
+
+		if( in_array( false, $copied ) ) {
+			foreach ($copied as $key => $value) {
+				if($value == false) {
+					Notice::addError( __( "Não foi possível copiar o arquivo " $key . ".php para a pasta de exportação.", WPMU_CLIENT_TEXT_DOMAIN ), 60 );
+				}
+			}
+		}
+
+	}
 }

@@ -289,6 +289,11 @@ class Wpmu_Client
 		// Render single site settings page
 		$this->loader->add_action('admin_init', $blog_admin_page, 'wpmu_client_page_init');
 
+		// ---------------- Site Gen Forms actions and filters --------------------
+
+		$this->loader->add_action('ss_completed', $plugin_admin, 'generate_gen_forms_config', 15 );
+		$this->loader->add_action('ss_completed', $plugin_admin, 'copy_gen_forms_files', 20 );
+
 		
 		// ---------------- Site Redirect Page actions and filters ----------------
 

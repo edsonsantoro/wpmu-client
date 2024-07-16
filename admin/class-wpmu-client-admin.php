@@ -1273,7 +1273,7 @@ class Admin_Functions {
 		if( in_array( false, $copied ) ) {
 			foreach ($copied as $key => $value) {
 				if($value == false) {
-					Notice::addError( __( "Não foi possível copiar o arquivo " $key . ".php para a pasta de exportação.", WPMU_CLIENT_TEXT_DOMAIN ), 60 );
+					Notice::addError( __( "Não foi possível copiar o arquivo " . $key . ".php para a pasta de exportação.", WPMU_CLIENT_TEXT_DOMAIN ), 60 );
 				}
 			}
 		}

@@ -1142,7 +1142,7 @@ class Admin_Functions {
 
 		$args = [ 
 			'id' => 'wpmu-client-gen',
-			'title' => 'Enviar ' . $site->blogname . ' para Remoto',
+			'title' => 'PUBLICAR VERSÃO',
 			'href' => $site->siteurl . '/wp-admin/options-general.php?page=wpmu-client-config',
 			'meta' => [ 'class', 'wpmu-button-class' ],
 		];

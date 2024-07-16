@@ -1263,11 +1263,11 @@ class Admin_Functions {
 		}
 
 		$copied = [
-			'index' => copy( $forms_folder . 'index.php', $export_path . '/gen_forms_submit/index.php' );
-			'PHPMailer' => copy( $forms_folder . 'PHPMailer.php', $export_path . '/gen_forms_submit/PHPMailer.php' );
-			'SMTP' => copy( $forms_folder . 'SMTP.php', $export_path . '/gen_forms_submit/SMTP.php' );
-			'submit' => copy( $forms_folder . 'submit.php', $export_path . '/gen_forms_submit/submit.php' );
-			'config' => copy( $forms_folder . 'config.php', $export_path . '/gen_forms_submit/config.php' );
+			'index' => copy( $forms_folder . 'index.php', $export_path . '/gen_forms_submit/index.php' ),
+			'PHPMailer' => copy( $forms_folder . 'PHPMailer.php', $export_path . '/gen_forms_submit/PHPMailer.php' ),
+			'SMTP' => copy( $forms_folder . 'SMTP.php', $export_path . '/gen_forms_submit/SMTP.php' ),
+			'submit' => copy( $forms_folder . 'submit.php', $export_path . '/gen_forms_submit/submit.php' ),
+			'config' => copy( $forms_folder . 'config.php', $export_path . '/gen_forms_submit/config.php' )
 		];
 
 		if( in_array( false, $copied ) ) {

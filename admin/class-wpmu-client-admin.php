@@ -1251,8 +1251,14 @@ class Admin_Functions {
 			return;	
 		}
 
-		if( !$this->check_dir_exists( $export_path . '/gen_forms_submit' )) {
-			$this->create_directory( $export_path . '/gen_forms_submit');
+		if( $this->check_dir_exists( $export_path . '/gen_forms_submit' ) == false ) {
+			$folder_created = $this->create_directory( $export_path . '/gen_forms_submit');
+
+			if($folder_created == false) {
+				Notice::addError( __( "Não foi possível criar a pasta `gen_forms_submit` na pasta de exportação do site estático. Operação de cópia dos arquivos abortada.", WPMU_CLIENT_TEXT_DOMAIN ), 30 );
+				return;
+			}
+
 		}
 		
 		// Gen Forms submit folder
@@ -1263,8 +1269,6 @@ class Admin_Functions {
 			Notice::addError( __( "Parece que não existem formulários para serem copiados para o estático. Operação abortada.", WPMU_CLIENT_TEXT_DOMAIN ), 30 );
 			return;
 		}
-
-
 
 		$copied = [
 			'index' => copy( $forms_folder . 'index.php', $export_path . '/gen_forms_submit/index.php' ),

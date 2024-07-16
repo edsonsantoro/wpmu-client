@@ -1251,6 +1251,10 @@ class Admin_Functions {
 			return;	
 		}
 
+		if( !$this->check_dir_exists( $export_path . '/gen_forms_submit' )) {
+			$this->create_directory( $export_path . '/gen_forms_submit');
+		}
+		
 		// Gen Forms submit folder
 		$forms_folder = WP_PLUGIN_DIR . '/gen_forms/gen_forms_submit/'; 
 		
@@ -1259,6 +1263,8 @@ class Admin_Functions {
 			Notice::addError( __( "Parece que não existem formulários para serem copiados para o estático. Operação abortada.", WPMU_CLIENT_TEXT_DOMAIN ), 30 );
 			return;
 		}
+
+
 
 		$copied = [
 			'index' => copy( $forms_folder . 'index.php', $export_path . '/gen_forms_submit/index.php' ),

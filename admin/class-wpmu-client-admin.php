@@ -1175,28 +1175,16 @@ class Admin_Functions {
 			return;
 		}
 
-		// Get blog settings slug
-		$blog_settings_slug = $this->blog_settings_slug;
+		// Gen Forms submit folder
+		$forms_folder = WP_PLUGIN_DIR . '/gen_forms/gen_forms_submit'; 
 
-		// Get export directory
-		$export_path = get_option( $blog_settings_slug . '_export_path', '' );
-
-		// If export directory path string is empty, exit function
-		if ( empty( $export_path ) ) {
-			Notice::addError( __( "A opção 'wpmu_client_blog_settings_export_path' não está definida. Abortando.", WPMU_CLIENT_TEXT_DOMAIN ), 30 );
+		// Check if folder gen forms submit exists
+		if( !is_dir( $forms_folder ) ) {
+			Notice::addError( __( "Parece que não existem formulários para serem copiados para o estático. Operação abortada.", WPMU_CLIENT_TEXT_DOMAIN ), 30 );
 			return;
 		}
 
-		// Resolve export directory path
-		$export_path = realpath( $export_path );
-
-		// Handle not a real path
-		if( $export_path === false) {
-			Notice::addError( __( "O caminho definido em 'wpmu_client_blog_settings_export_path' não existe ou está incorreto. Abortando cópia de arquivos Gen Forms.", WPMU_CLIENT_TEXT_DOMAIN ), 30 );
-			return;	
-		}
-		
-		$config_file = $export_path . "/gen_forms_submit/config.php";
+		$config_file = $forms_folder . "/config.php";
 
 		// Initialize config contents
 		$content = gen_form_render_submit();

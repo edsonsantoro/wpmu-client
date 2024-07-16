@@ -1199,6 +1199,16 @@ class Admin_Functions {
 			Notice::addError( $message );
 			return;
 		}
+
+		$message = "Arquivo Gen Form Config gerado com sucesso";
+		$datetime = current_time( 'Y-m-d H:i:s' );
+		$ss_options['archive_status_messages']['gen_forms_config'] = [ 'message' => $message, 'datetime' => $datetime ];
+		$updated = update_option( 'simply-static', $ss_options );
+		if ( ! $updated ) {
+			$msg = "Não pude atualizar as mensages de status do simply-static";
+			Notice::addError( $msg, 60 );
+			error_log( "Não pude atualizar as mensages de status do simply-static" );
+		}
 		
 	}
 
@@ -1264,7 +1274,16 @@ class Admin_Functions {
 					Notice::addError( __( "Não foi possível copiar o arquivo " . $key . ".php para a pasta de exportação.", WPMU_CLIENT_TEXT_DOMAIN ), 60 );
 				}
 			}
+		} else {
+			$message = "Arquivos do Gen Forms copiados com sucesso";
+			$datetime = current_time( 'Y-m-d H:i:s' );
+			$ss_options['archive_status_messages']['gen_forms'] = [ 'message' => $message, 'datetime' => $datetime ];
+			$updated = update_option( 'simply-static', $ss_options );
+			if ( ! $updated ) {
+				$msg = "Não pude atualizar as mensages de status do simply-static";
+				Notice::addError( $msg, 60 );
+				error_log( "Não pude atualizar as mensages de status do simply-static" );
+			}
 		}
-
 	}
 }

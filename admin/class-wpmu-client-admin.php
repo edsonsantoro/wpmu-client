@@ -725,7 +725,9 @@ class Admin_Functions {
 			} else {
 				$urls_to_exclude = $exclude_feed;
 			}
-		} else {
+		} 
+
+		if ( ! isset( $path ) || empty( $path )) {
 			$message = 'Caminho de exportação para este site não foi definido.';
 			error_log( $message );
 			Notice::addError( $message, 60 );

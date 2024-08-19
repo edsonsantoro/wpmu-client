@@ -725,13 +725,20 @@ class Admin_Functions {
 			} else {
 				$urls_to_exclude = $exclude_feed;
 			}
+		} else {
+			$message = 'Caminho de exportação para este site não foi definido.';
+			error_log( $message );
+			Notice::addError( $message, 60 );
 		}
 
 		$options['force_replace_url'] = 'on';
-		$options['urls_to_exclude'] = $urls_to_exclude;
 		$options['clear_directory_before_export'] = 'on';
 		$options['delivery_method'] = 'local';
+		$options['http_basic_auth_digest'] = 'ZHJiLm1rdDpkcmIubWt0';
 		$options['local_dir'] = $path;
+		$options['clear_directory_before_export'] = 'on';
+		$options['destination_url_type'] = 'absolute';
+
 		update_blog_option( $new_blog_id, 'simply-static', $options );
 	}
 
@@ -933,7 +940,7 @@ class Admin_Functions {
 
 		if ( ! is_writable( $export_path . '/logs' ) ) {
 			Notice::addError( "Não foi possível criar a pasta de logs", 30 );
-			error_log( 'nao posso gravar' );
+			error_log( 'Não foi possível criar a pasta de logs' );
 		}
 
 		$log_path = $export_path . '/logs/transfer-' . $reference . '.log';
@@ -1287,7 +1294,7 @@ class Admin_Functions {
 		} else {
 			$message = "Arquivos do Gen Forms copiados com sucesso";
 			$datetime = current_time( 'Y-m-d H:i:s' );
-			$ss_options['archive_status_messages']['gen_forms'] = [ 'message' => $message, 'datetime' => $datetime ];
+			$ss_options['archive_status_messages']['gen_forms_replace'] = [ 'message' => $message, 'datetime' => $datetime ];
 			$updated = update_option( 'simply-static', $ss_options );
 			if ( ! $updated ) {
 				$msg = "Não pude atualizar as mensages de status do simply-static";

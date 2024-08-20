@@ -259,7 +259,7 @@ class Wpmu_Client
 		$messages = new Notice();
 
 		$this->loader->add_action( 'admin_notices', $messages, 'displayAdminNotice', 10 );
-		$this->loader->add_action( 'wp_ajax_wpdocs_dismiss_message', $messages, 'deleteTransient', );
+		$this->loader->add_action( 'wp_ajax_wpmu_client_dismiss_message', $messages, 'deleteTransient', );
 
 		// ---------------- Network Settings Page actions and filters ----------------
 		// Add our network plugin menu item

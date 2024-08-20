@@ -28,9 +28,12 @@
 
     jQuery('.notice.is-dismissible .notice-dismiss').on('click', function () {
       var notice = $(this).closest('.notice');
+      var displayedAt = $(this).closest('.notice').data('displayed-at'); // Obter o timestamp pra exlusão
+      var nonce = $(this).closest('.notice').data('nonce'); // Obter o nonce
       var data = {
-        action: 'wp_ajax_wpmu_client_dismiss_message',
-        displayedAt: $(this).closest('.notice').data('displayed-at')
+        action: 'wpmu_client_dismiss_message', // Nome correto do hook
+        nonce: nonce, // Passar o nonce como parâmetro
+        displayedAt: displayedAt
       };
 
       jQuery.ajax({

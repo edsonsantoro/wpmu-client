@@ -34,7 +34,7 @@ class Activator
 	 */
 	public static function activate()
 	{
-		$message = __("Plugin ativado. Por favor, <a href='site_url()/wp-admin/network/settings.php?page=wpmu_client_network_settings-page'>defina as opções aqui.</a>", WPMU_CLIENT_TEXT_DOMAIN );
+		$message = __("Plugin ativado. Por favor, <a href='/wp-admin/network/settings.php?page=wpmu_client_network_settings-page'>defina as opções aqui.</a>", WPMU_CLIENT_TEXT_DOMAIN );
 		Notice::addInfo( $message );
 	}
 

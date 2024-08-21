@@ -810,7 +810,10 @@ class Admin_Functions {
 			$reference = new DateTime( $timestamp );
 			$reference = $reference->format( 'j-M-Y-H\h-i\m-s\s' );
 
-			self::pre_export_check( $blog_id );
+			$pre_check = self::pre_export_check( $blog_id );
+			if (!$pre_check) {
+				wp_send_json_error( [ "message" => "Erro com as credenciais de FTP. Algo está faltando." ] );
+			}
 
 			$async_request_lock_expiration = ActionScheduler::lock()->get_expiration( 'async-request-runner' );
 			$expiration = $async_request_lock_expiration - time();
@@ -861,6 +864,8 @@ class Admin_Functions {
 			Notice::addError( $notice );
 			wp_send_json_error( $notice );
 		}
+
+		return true;
 
 	}
 

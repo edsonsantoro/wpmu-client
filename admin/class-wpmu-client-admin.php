@@ -820,7 +820,7 @@ class Admin_Functions {
 			error_log($async_request_lock_expiration);
 			$expiration = $async_request_lock_expiration - time();
 			error_log($expiration);
-			$id = as_enqueue_async_action( 'wpmu_schedule_export', [ 'blog_id' => $blog_id, 'timestamp' => $timestamp, 'reference' => $reference ], '', true );
+			$id = as_enqueue_async_action( 'wpmu_schedule_export', [ 'blog_id' => $blog_id, 'timestamp' => $timestamp ], '', true );
 			$result = [ 'message' => "Processo de envio agendado com id: " . $id . " e referência: " . $reference . ".\nAguardando início em " . $expiration . " segundos.", 'reference' => $reference, 'id' => $id ];
 			error_log('Export agendado');
 			wp_send_json_success( $result, 200 );
@@ -878,7 +878,7 @@ class Admin_Functions {
 	/**
 	 * The function responsible for exporting static generated sites to remote FTPs
 	 */
-	public function wpmu_init_export( int $blog_id, string $timestamp, string $reference ) {
+	public function wpmu_init_export( int $blog_id, string $timestamp) {
 		// Let's try to get this blog by id
 		$site = get_site( $blog_id );
 		if ( $site == null ) {

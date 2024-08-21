@@ -820,7 +820,7 @@ class Admin_Functions {
 			error_log($async_request_lock_expiration);
 			$expiration = $async_request_lock_expiration - time();
 			error_log($expiration);
-			$id = as_enqueue_async_action( 'wpmu_schedule_export', [ 'blog_id' => $blog_id, 'timestamp' => $timestamp ], '', true );
+			$id = as_enqueue_async_action( 'wpmu_schedule_export', [ 'blog_id' => $blog_id, 'timestamp' => $timestamp, 'reference' => $reference], '', true );
 			$result = [ 'message' => "Processo de envio agendado com id: " . $id . " e referência: " . $reference . ".\nAguardando início em " . $expiration . " segundos.", 'reference' => $reference, 'id' => $id ];
 			error_log('Export agendado');
 			wp_send_json_success( $result, 200 );

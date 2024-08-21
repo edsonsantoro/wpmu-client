@@ -937,9 +937,6 @@ class Admin_Functions {
 			return false;
 		}
 
-		// Get export path to create our logs
-		$export_path = get_blog_option( $blog_id, $this->blog_settings_slug . "_export_path" );
-
 		if ( ! $this->check_dir_exists( $export_path . '/logs' ) ) {
 			$this->create_directory( $export_path . '/logs' );
 		}
@@ -955,7 +952,7 @@ class Admin_Functions {
 		// Lets build the command argument
 		$cmd = 'lftp -u "' . $ftp_user . '"' . $ftp_pass . $ftp_port . $ftp_host . ' -e "set ftp:ssl-allow no;set log:enabled yes;set log:show-time yes;set log:file ' . $xfer_log_path . ';mirror --exclude=logs/ -P 5 -v ' . $ftp_sync_new_only . '-R ' . $export_path . '/ ' . $ftp_path . ';exit;" > ' . $log_path;
 
-		exec( $cmd );
+		exec( $cmd, $output, $return_var );
 		return true;
 
 	}

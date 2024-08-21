@@ -959,6 +959,17 @@ class Admin_Functions {
 		$cmd = 'lftp -u "' . $ftp_user . '"' . $ftp_pass . $ftp_port . $ftp_host . ' -e "set ftp:ssl-allow no;set log:enabled yes;set log:show-time yes;set log:file ' . $xfer_log_path . ';mirror --exclude=logs/ -P 5 -v ' . $ftp_sync_new_only . ' -R ' . $export_path . '/ ' . $ftp_path . ';exit;" > ' . $log_path;
 
 		exec( $cmd, $output, $return_var );
+
+		// Verifica se o comando foi executado com sucesso
+		if ( $return_var !== 0 || ! empty( $output ) && ! in_array( 'Closing control socket', $output ) ) {
+			// O comando 'lftp' falhou
+			$notice = $this->plugin_name . ": Erro: O Comano para exportação LFTP não foi executado corretamente. Abortando.";
+			error_log( "Erro ao executar o comando lftp: $cmd" );
+			error_log( "Saída do comando: " . implode( "\n", $output ) );
+			Notice::addError( $notice );
+			return false;
+		} 
+
 		return true;
 
 	}

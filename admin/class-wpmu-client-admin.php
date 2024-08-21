@@ -812,19 +812,25 @@ class Admin_Functions {
 
 			$pre_check = self::pre_export_check( $blog_id );
 			if (!$pre_check) {
+				error_log('erro na pre_check');
 				wp_send_json_error( [ "message" => "Erro com as credenciais de FTP. Algo está faltando." ] );
 			}
 
 			$async_request_lock_expiration = ActionScheduler::lock()->get_expiration( 'async-request-runner' );
+			error_log($async_request_lock_expiration);
 			$expiration = $async_request_lock_expiration - time();
+			error_log($expiration);
 			$id = as_enqueue_async_action( 'wpmu_schedule_export', [ 'blog_id' => $blog_id, 'timestamp' => $timestamp, 'reference' => $reference ], '', true );
 			$result = [ 'message' => "Processo de envio agendado com id: " . $id . " e referência: " . $reference . ".\nAguardando início em " . $expiration . " segundos.", 'reference' => $reference, 'id' => $id ];
+			error_log('Export agendado');
 			wp_send_json_success( $result, 200 );
 		}
+		error_log('Export já na fila');
 		wp_send_json_success( [ "message" => "Export já na fila, aguarde..." ] );
 	}
 
 	public function pre_export_check( int $blog_id ) {
+
 		$site = get_site( $blog_id );
 		if ( $site == null ) {
 			// The blog does not exist, log and abort
@@ -872,7 +878,7 @@ class Admin_Functions {
 	/**
 	 * The function responsible for exporting static generated sites to remote FTPs
 	 */
-	public function wpmu_init_export( int $blog_id, string $timestamp ) {
+	public function wpmu_init_export( int $blog_id, string $timestamp, string $reference ) {
 		// Let's try to get this blog by id
 		$site = get_site( $blog_id );
 		if ( $site == null ) {

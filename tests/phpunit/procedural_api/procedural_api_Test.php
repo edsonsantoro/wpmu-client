@@ -227,7 +227,7 @@ class Procedural_API_Test extends ActionScheduler_UnitTestCase {
 
 	public function test_as_get_datetime_object_default() {
 
-		$utc_now = new ActionScheduler_DateTime( null, new DateTimeZone( 'UTC' ) );
+		$utc_now = new ActionScheduler_DateTime( 'now', new DateTimeZone( 'UTC' ) );
 		$as_now  = as_get_datetime_object();
 
 		// Don't want to use 'U' as timestamps will always be in UTC.
@@ -268,7 +268,7 @@ class Procedural_API_Test extends ActionScheduler_UnitTestCase {
 		// phpcs:ignore
 		date_default_timezone_set( $timezone_au );
 
-		$au_now = new ActionScheduler_DateTime( null );
+		$au_now = new ActionScheduler_DateTime( 'now' );
 		$as_now = as_get_datetime_object();
 
 		// Make sure they're for the same time.
@@ -277,7 +277,7 @@ class Procedural_API_Test extends ActionScheduler_UnitTestCase {
 		// But not in the same timezone, as $as_now should be using UTC.
 		$this->assertNotEquals( $au_now->format( 'Y-m-d H:i:s' ), $as_now->format( 'Y-m-d H:i:s' ) );
 
-		$au_now    = new ActionScheduler_DateTime( null );
+		$au_now    = new ActionScheduler_DateTime( 'now' );
 		$as_au_now = as_get_datetime_object();
 
 		$this->assertEquals( $au_now->getTimestamp(), $as_now->getTimestamp(), '', 2 );
@@ -353,6 +353,20 @@ class Procedural_API_Test extends ActionScheduler_UnitTestCase {
 	}
 
 	/**
+	 * Test enqueuing a unique action using the hybrid store.
+	 * This is using a best-effort approach, so it's possible that the action will be enqueued even if it's not unique.
+	 */
+	public function test_as_enqueue_async_action_unique_hybrid_best_effort() {
+		$this->set_action_scheduler_store( new ActionScheduler_HybridStore() );
+
+		$action_id = as_enqueue_async_action( 'hook_1', array( 'a' ), 'dummy', true );
+		$this->assertValidAction( $action_id );
+
+		$action_id_duplicate = as_enqueue_async_action( 'hook_1', array( 'a' ), 'dummy', true );
+		$this->assertEquals( 0, $action_id_duplicate );
+	}
+
+	/**
 	 * Test as_schedule_single_action with unique param.
 	 */
 	public function test_as_schedule_single_action_unique() {
@@ -389,6 +403,59 @@ class Procedural_API_Test extends ActionScheduler_UnitTestCase {
 
 		$action_id_duplicate = as_schedule_cron_action( time(), '0 0 * * *', 'hook_1', array( 'a' ), 'dummy', true );
 		$this->assertEquals( 0, $action_id_duplicate );
+	}
+
+	/**
+	 * Test recovering from an incorrect database schema when scheduling a single action.
+	 */
+	public function test_as_recover_from_incorrect_schema() {
+		// custom error reporting so we can test for errors sent to error_log.
+		global $wpdb;
+		$wpdb->suppress_errors( true );
+		$error_capture = tmpfile();
+		$actual_error_log = ini_set( 'error_log', stream_get_meta_data( $error_capture )['uri'] );
+
+		// we need a hybrid store so that dropping the priority column will cause an exception.
+		$this->set_action_scheduler_store( new ActionScheduler_HybridStore() );
+		$this->assertEquals( 'ActionScheduler_HybridStore', get_class( ActionScheduler::store() ) );
+
+		// drop the priority column from the actions table.
+		$wpdb->query( "ALTER TABLE {$wpdb->actionscheduler_actions} DROP COLUMN priority" );
+
+		// try to schedule a single action.
+		$action_id = as_schedule_single_action( time(), 'hook_17', array( 'a', 'b' ), 'dummytest', true );
+
+		// ensure that no exception was thrown and zero was returned.
+		$this->assertEquals( 0, $action_id );
+
+		// try to schedule an async action.
+		$action_id = as_enqueue_async_action( 'hook_18', array( 'a', 'b' ), 'dummytest', true );
+		// ensure that no exception was thrown and zero was returned.
+		$this->assertEquals( 0, $action_id );
+
+		// try to schedule a recurring action.
+		$action_id = as_schedule_recurring_action( time(), MINUTE_IN_SECONDS, 'hook_19', array( 'a', 'b' ), 'dummytest', true );
+		// ensure that no exception was thrown and zero was returned.
+		$this->assertEquals( 0, $action_id );
+
+		// try to schedule a cron action.
+		$action_id = as_schedule_cron_action( time(), '0 0 * * *', 'hook_20', array( 'a', 'b' ), 'dummytest', true );
+		// ensure that no exception was thrown and zero was returned.
+		$this->assertEquals( 0, $action_id );
+
+		// ensure that all four errors were logged to error_log.
+		$logged_errors = stream_get_contents( $error_capture );
+		$this->assertContains( 'Caught exception while enqueuing action "hook_17": Error saving action', $logged_errors );
+		$this->assertContains( 'Caught exception while enqueuing action "hook_18": Error saving action', $logged_errors );
+		$this->assertContains( 'Caught exception while enqueuing action "hook_19": Error saving action', $logged_errors );
+		$this->assertContains( 'Caught exception while enqueuing action "hook_20": Error saving action', $logged_errors );
+		$this->assertContains( "Unknown column 'priority' in 'field list'", $logged_errors );
+
+		// recreate the priority column.
+		$wpdb->query( "ALTER TABLE {$wpdb->actionscheduler_actions} ADD COLUMN priority tinyint(10) UNSIGNED NOT NULL DEFAULT 10" );
+		// restore error logging.
+		$wpdb->suppress_errors( false );
+		ini_set( 'error_log', $actual_error_log );
 	}
 
 	/**

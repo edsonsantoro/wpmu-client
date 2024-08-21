@@ -817,7 +817,7 @@ class Admin_Functions {
 
 			$async_request_lock_expiration = ActionScheduler::lock()->get_expiration( 'async-request-runner' );
 			$expiration = $async_request_lock_expiration - time();
-			$id = as_enqueue_async_action( 'wpmu_schedule_export', [ 'blog_id' => $blog_id, 'timestamp' => $timestamp, 'reference' => $reference ], true );
+			$id = as_enqueue_async_action( 'wpmu_schedule_export', [ 'blog_id' => $blog_id, 'timestamp' => $timestamp, 'reference' => $reference ], '', true );
 			$result = [ 'message' => "Processo de envio agendado com id: " . $id . " e referência: " . $reference . ".\nAguardando início em " . $expiration . " segundos.", 'reference' => $reference, 'id' => $id ];
 			wp_send_json_success( $result, 200 );
 		}

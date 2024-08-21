@@ -134,7 +134,7 @@ class Admin_Redirect_Settings_Page {
 			'wpmu-client-config',
 			'DRB.MKT | Redirecionamentos',
 			'Redirecionamentos',
-			'manage_options',
+			'edit_posts',
 			'wpmu-client-redirects',
 			[ $this, 'wpmu_client_create_redirects_page' ]
 		);

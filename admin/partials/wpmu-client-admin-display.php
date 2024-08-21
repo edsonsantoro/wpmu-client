@@ -55,7 +55,7 @@ class Admin_Settings_Page
 		add_menu_page(
 			'DRB.MKT | Página de Envio',
 			'DRB.MKT GEN',
-			'manage_options',
+			'edit_posts',
 			'wpmu-client-config',
 			[$this, 'wpmu_client_create_admin_page'],
 			'dashicons-admin-generic',

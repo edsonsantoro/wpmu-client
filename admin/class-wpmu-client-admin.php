@@ -836,11 +836,6 @@ class Admin_Functions {
 		// Get ftp credentials, client name, and export path
 		$client = get_blog_option( $blog_id, $blog_settings_slug . "_client", false );
 		$ftp_host = get_blog_option( $blog_id, $blog_settings_slug . "_ftp_host", false );
-		$ftp_user = get_blog_option( $blog_id, $blog_settings_slug . "_ftp_user", "anonymous" );
-		$ftp_pass = ( false != get_blog_option( $blog_id, $blog_settings_slug . "_ftp_pass" ) ) ? ',"' . get_blog_option( $blog_id, $blog_settings_slug . "_ftp_pass" ) . '" ' : ' '; // Do not remove whitespaces
-		$ftp_port = ( false != get_blog_option( $blog_id, $blog_settings_slug . "_ftp_port" ) ) ? '-p ' . get_blog_option( $blog_id, $blog_settings_slug . "_ftp_port" ) . ' ' : '-p 21 '; // Do not remove whitespaces
-		$ftp_path = ( false != get_blog_option( $blog_id, $blog_settings_slug . "_ftp_path" ) ) ? get_blog_option( $blog_id, $blog_settings_slug . "_ftp_path" ) : './';
-		$ftp_sync_new_only = ( false != get_blog_option( $blog_id, $blog_settings_slug . "_ftp_sync_new_only" ) ) ? "-n " : "";
 		$export_path = get_blog_option( $blog_id, $blog_settings_slug . "_export_path", false );
 
 		// If no FTP credentials, abort

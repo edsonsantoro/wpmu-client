@@ -737,9 +737,13 @@ class Admin_Functions {
 		$options['clear_directory_before_export'] = 'on';
 		$options['delivery_method'] = 'local';
 		$options['http_basic_auth_digest'] = 'ZHJiLm1rdDpkcmIubWt0';
+		$options['http_basic_auth_password'] = 'drb.mkt';
+		$options['http_basic_auth_username'] = 'drb.mkt';
 		$options['local_dir'] = $path;
 		$options['clear_directory_before_export'] = 'on';
 		$options['destination_url_type'] = 'absolute';
+		$options['destination_scheme'] = 'https://';
+		$options['destination_host'] = get_blog_option($new_blog_id, $this->blog_settings_slug . "_client_domain", '');
 
 		update_blog_option( $new_blog_id, 'simply-static', $options );
 	}

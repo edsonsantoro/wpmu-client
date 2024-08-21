@@ -134,6 +134,15 @@ class Network_Tab_Page
             $blog_id
         );
 
+        add_settings_field(
+            "client_domain",
+            __('Domínio do site a ser publicado (sem https)', $this->plugin_name),
+            [$this, "client_domain_callback"],
+            $this->blog_settings_slug . "-tab",
+            $this->blog_settings_slug . "_client_section",
+            $blog_id
+        );
+
         add_settings_section(
             $this->blog_settings_slug . "_ss_section",
             __("Opções do Gerador", $this->plugin_name),
@@ -255,7 +264,17 @@ class Network_Tab_Page
             ""
         );
     }
-
+    
+    public function client_domain_callback(int $blog_id)
+    {
+        printf(
+            '<input class="regular-text" type="text" name="%s[client_domain]" id="client_domain" placeholder="site.tld" value="%s">',
+            $this->blog_settings_slug,
+            get_blog_option($blog_id, $this->blog_settings_slug . "_client_domain", ""),
+            __("Domínio do site do cliente. Este endereço será usado para exportar o site com esse domínio nos arquivos e links.", $this->plugin_name),
+            ""
+        );
+    }
     /**
      * Render infos on section
      */
@@ -353,6 +372,7 @@ class Network_Tab_Page
         $options = [
             "client" => "",
             "client_email" => "",
+            "client_domain" => "",
             "ftp_host" => "",
             "ftp_user" => "",
             "ftp_pass" => "",

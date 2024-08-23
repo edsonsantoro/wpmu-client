@@ -258,8 +258,8 @@ class Wpmu_Client
 		$network_tab_page = new Network_Tab_Page($plugin_name, $version, $network_settings_slug, $blog_settings_slug);
 		$messages = new Notice();
 
-		$this->loader->add_action( 'admin_notices', $messages, 'displayAdminNotice', 10 );
-		$this->loader->add_action( 'wp_ajax_wpmu_client_dismiss_message', $messages, 'deleteTransient', );
+		$this->loader->add_action('admin_notices', $messages, 'displayAdminNotice', 10);
+		$this->loader->add_action('wp_ajax_wpmu_client_dismiss_message', $messages, 'deleteTransient', );
 
 		// ---------------- Network Settings Page actions and filters ----------------
 		// Add our network plugin menu item
@@ -291,10 +291,10 @@ class Wpmu_Client
 
 		// ---------------- Site Gen Forms actions and filters --------------------
 
-		$this->loader->add_action('ss_completed', $plugin_admin, 'generate_gen_forms_config', 15 );
-		$this->loader->add_action('ss_completed', $plugin_admin, 'copy_gen_forms_files', 20 );
+		$this->loader->add_action('ss_completed', $plugin_admin, 'generate_gen_forms_config', 15);
+		$this->loader->add_action('ss_completed', $plugin_admin, 'copy_gen_forms_files', 20);
 
-		
+
 		// ---------------- Site Redirect Page actions and filters ----------------
 
 		// Add this page to the menu
@@ -310,7 +310,7 @@ class Wpmu_Client
 		$this->loader->add_action('wp_ajax_delete_redirect', $redirects_page, 'delete_redirect');
 		$this->loader->add_action('ss_completed', $redirects_page, 'build_htaccess');
 		$this->loader->add_action('ss_completed', $redirects_page, 'build_sendmail');
-		
+
 		// ---------------- General Admin Functions actions and filters ----------------
 		// Display client site field on WPMU New Site screen
 		$this->loader->add_action('network_site_new_form', $plugin_admin, 'show_client_field');

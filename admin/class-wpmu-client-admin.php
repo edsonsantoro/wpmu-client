@@ -813,20 +813,29 @@ class Admin_Functions {
 
 			$pre_check = self::pre_export_check( $blog_id );
 			if (!$pre_check) {
-				error_log('erro na pre_check');
 				wp_send_json_error( [ "message" => "Erro com as credenciais de FTP. Algo está faltando." ] );
 			}
 
 			$async_request_lock_expiration = ActionScheduler::lock()->get_expiration( 'async-request-runner' );
-			error_log($async_request_lock_expiration);
 			$expiration = $async_request_lock_expiration - time();
-			error_log($expiration);
-			$id = as_enqueue_async_action( 'wpmu_schedule_export', [ 'blog_id' => $blog_id, 'timestamp' => $timestamp, 'reference' => $reference], '', true );
-			$result = [ 'message' => "Processo de envio agendado com id: " . $id . " e referência: " . $reference . ".\nAguardando início em " . $expiration . " segundos.", 'reference' => $reference, 'id' => $id ];
-			error_log('Export agendado');
+			$username = wp_get_current_user()->user_login;
+			
+			$args = [
+				'blog_id' => $blog_id,
+				'timestamp' => $timestamp,
+				'reference' => $reference,
+				'user' => $username
+			];
+
+			$id = as_enqueue_async_action( 'wpmu_schedule_export', $args, '', true );
+			
+			$result = [ 'message' => 
+				"Processo de envio agendado com id: " . $id .
+				"\nReferência: " . $reference .
+				"\nIniciado por: " . wp_get_current_user()->user_login .
+				"\nAguardando início em " . $expiration . " segundos.", 'reference' => $reference, 'id' => $id ];
 			wp_send_json_success( $result, 200 );
 		}
-		error_log('Export já na fila');
 		wp_send_json_success( [ "message" => "Export já na fila, aguarde..." ] );
 	}
 
@@ -863,7 +872,7 @@ class Admin_Functions {
 			Notice::addError( $notice );
 			wp_send_json_error( $notice );
 		}
-
+s
 		// If no export path, abort
 		if ( empty ( $export_path ) ) {
 			$notice = "WPMU-CLIENT: Caminho de exportação não definido. Abortando.";

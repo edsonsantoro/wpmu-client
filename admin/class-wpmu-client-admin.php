@@ -977,7 +977,10 @@ class Admin_Functions {
 			error_log( "Saída do comando: " . implode( "\n", $output ) );
 			Notice::addError( $notice );
 			return false;
-		} 
+		} else {
+			$last_message = __("Exportação finalizada com sucesso.", $this->plugin_name);
+			file_put_contents($log_path, $last_message, FILE_APPEND | LOCK_EX );
+		}
 
 		return true;
 

@@ -967,8 +967,13 @@ class Admin_Functions {
 
 		// Lets build the command argument
 		$cmd = 'lftp -u "' . $ftp_user . '"' . $ftp_pass . $ftp_port . $ftp_host . ' -e "set ftp:ssl-allow no;set log:enabled yes;set log:show-time yes;set log:file ' . $xfer_log_path . ';mirror --exclude=logs/ -P 5 -vvv ' . $ftp_sync_new_only . ' -R ' . $export_path . '/ ' . $ftp_path . ';exit;" > ' . $log_path;
+
+		$startTime = microtime(true);
 		exec( $cmd, $output, $return_var );
-		
+		$endTime = microtime(true);
+
+		$execution_time = $endTime - $startTime;
+
 		// Verifica se o comando foi executado com sucesso
 		if ( $return_var !== 0 || ! empty( $output ) && ! in_array( 'Closing control socket', $output ) ) {
 			// O comando 'lftp' falhou
@@ -978,12 +983,31 @@ class Admin_Functions {
 			Notice::addError( $notice );
 			return false;
 		} else {
-			$last_message = __("Exportação finalizada com sucesso.", $this->plugin_name);
+			$formated_exec_time = $this->format_execution_time($execution_time);
+			$time_total = sprintf( "Tempo de execução: %s", $formated_exec_time );
+			$last_message = __("Exportação finalizada com sucesso.\n" . $time_total, $this->plugin_name);
 			file_put_contents($log_path, $last_message, FILE_APPEND | LOCK_EX );
 		}
 
 		return true;
 
+	}
+
+	private function format_execution_time( $executionTime ) {
+		
+		// float seconds to integer
+		$seconds = (int)$executionTime;
+
+		// calc secs and min
+		$minutes = floor($seconds / 60);
+		$remainingSeconds = $seconds % 60;
+	
+		// format time accordingly
+		if ($minutes > 0) {
+			return sprintf('%d:%02dm', $minutes, $remainingSeconds);
+		} else {
+			return sprintf('%ds', $seconds);
+		}
 	}
 
 	public function read_export_log( $blog_id = '', $timestamp = '' ) {

@@ -872,7 +872,7 @@ class Admin_Functions {
 			Notice::addError( $notice );
 			wp_send_json_error( $notice );
 		}
-s
+
 		// If no export path, abort
 		if ( empty ( $export_path ) ) {
 			$notice = "WPMU-CLIENT: Caminho de exportação não definido. Abortando.";
